@@ -13,6 +13,10 @@ UnitacsClient.prototype.foo = function(arg) {
 var client = new UnitacsClient();
 client.foo(5);
 
+window.onresize = function() {
+    console.log('resized');
+}
+
 /*function load() {
     var planetsData = [
         {name: 'Albion', ID: 1, neighborIDs: [7, 10, 13, 19, 41], x: 135, y: 239},
