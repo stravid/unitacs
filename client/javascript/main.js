@@ -1,9 +1,39 @@
+var MAP_WIDTH = 1000;
+var MAP_HEIGHT = 1000;
+
 function UnitacsClient() {
     console.log('client started');
     
-    this.variable = 10;
+    this.initMap();
+    //window.onresize = this.resizeMap;
     
+    this.variable = 10;
     this.foo(0);
+};
+
+UnitacsClient.prototype.initMap = function() {
+    console.log('map initialized');
+    
+    this.map = Raphael('map', MAP_WIDTH, MAP_HEIGHT);
+    
+    this.stuffSet = this.map.set();
+    this.stuffSet.push(this.map.circle(200, 200, 50));
+    this.stuffSet.attr({stroke: "#fff"});
+    
+    this.oldViewport = [MAP_WIDTH, MAP_HEIGHT];
+    //this.resizeMap();
+};
+
+UnitacsClient.prototype.resizeMap = function() {
+    console.log('map resized');
+    
+    var viewport = getViewport();
+    
+    var scaleX = viewport[0] / this.oldViewport[0];
+    var scaleY = viewport[1] / this.oldViewport[1];
+    var scale = (scaleX > scaleY) ? scaleY : scaleX;
+    
+    this.stuffSet.scale(scale,scale,0,0);
 };
 
 UnitacsClient.prototype.foo = function(arg) {
@@ -12,10 +42,6 @@ UnitacsClient.prototype.foo = function(arg) {
 
 var client = new UnitacsClient();
 client.foo(5);
-
-window.onresize = function() {
-    console.log('resized');
-}
 
 /*function load() {
     var planetsData = [
@@ -183,7 +209,7 @@ window.onresize = function() {
     
     
 };
-
+*/
 // http://andylangton.co.uk/articles/javascript/get-viewport-size-javascript/
 function getViewport() {
     var viewPortWidth;
@@ -211,7 +237,7 @@ function getViewport() {
     
     return [viewPortWidth, viewPortHeight];
 };
-
+/*
 function Dijkstra(adjacencyMatrix, source) {
     this.matrix = adjacencyMatrix;
     this.nodes = new Array();
