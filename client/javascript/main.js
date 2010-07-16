@@ -1,14 +1,66 @@
-var MAP_WIDTH = 1000;
-var MAP_HEIGHT = 1000;
+// constants
+
+// map
+MAP_WIDTH = 600;
+MAP_HEIGHT = 500;
+VIEWPORT_WIDTH_VARIANCE = 20;
+VIEWPORT_HEIGHT_VARIANCE = 30;
+
+planetsData = [
+    {name: 'Albion', ID: 1, neighborIDs: [7, 10, 13, 19, 41], x: 135, y: 239},
+    {name: 'Arcadia', ID: 2, neighborIDs: [4, 8, 9, 11, 31], x: 134, y: 449},
+    {name: 'Atreus', ID: 3, neighborIDs: [12, 20, 21, 38], x: 395, y: 353},
+    {name: 'Babylon', ID: 4, neighborIDs: [2, 8, 9, 11], x: 76, y: 482},
+    {name: 'Barcella', ID: 5, neighborIDs: [23, 34, 40], x: 190, y: 48},
+    {name: 'Bearclaw', ID: 6, neighborIDs: [27, 38], x: 558, y: 390},
+    {name: 'Brim', ID: 7, neighborIDs: [1, 10, 13, 24, 31], x: 200, y: 296},
+    {name: 'Circe', ID: 8, neighborIDs: [2, 4, 9, 11, 31], x: 75, y: 375},
+    {name: 'Dagda', ID: 9, neighborIDs: [2, 4, 8, 11], x: 39, y: 479},
+    {name: 'Delios', ID: 10, neighborIDs: [1, 7, 13, 22, 29], x: 203, y: 230},
+    {name: 'Eden', ID: 11, neighborIDs: [2, 4, 8, 9], x: 21, y: 435},
+    {name: 'Foster', ID: 12, neighborIDs: [3, 20, 21], x: 336, y: 366},
+    {name: 'Gatekeeper', ID: 13, neighborIDs: [1, 7, 10, 24, 29, 31], x: 191, y: 278},
+    {name: 'Glory', ID: 14, neighborIDs: [30, 32, 36], x: 440, y: 150},
+    {name: 'Grants Station', ID: 15, neighborIDs: [19, 28, 41], x: 89, y: 157},
+    {name: 'Hector', ID: 16, neighborIDs: [26, 32, 39], x: 564, y: 285},
+    {name: 'Hellgate', ID: 17, neighborIDs: [18, 30], x: 331, y: 150},
+    {name: 'Hoard', ID: 18, neighborIDs: [17, 30, 34], x: 324, y: 58},
+    {name: 'Homer', ID: 19, neighborIDs: [1, 15, 41], x: 73, y: 229},
+    {name: 'Huntress', ID: 20, neighborIDs: [3, 12, 21, 33], x: 342, y: 313},
+    {name: 'Ironhold', ID: 21, neighborIDs: [3, 12, 20, 33], x: 341, y: 347},
+    {name: 'Kirin', ID: 22, neighborIDs: [10, 29, 35], x: 194, y: 156},
+    {name: 'Londerholm', ID: 23, neighborIDs: [5, 28], x: 132, y: 59},
+    {name: 'Lum', ID: 24, neighborIDs: [7, 13, 31, 33], x: 252, y: 323},
+    {name: 'Marshall', ID: 25, neighborIDs: [33, 36], x: 371, y: 234},
+    {name: 'New Kent', ID: 26, neighborIDs: [16, 32, 39], x: 494, y: 261},
+    {name: 'Niles', ID: 27, neighborIDs: [6, 38], x: 497, y: 418},
+    {name: 'Paxon', ID: 28, neighborIDs: [15, 23], x: 78, y: 66},
+    {name: 'Priori', ID: 29, neighborIDs: [10, 13, 22, 33], x: 250, y: 225},
+    {name: 'Roche', ID: 30, neighborIDs: [14, 17, 18, 37], x: 381, y: 74},
+    {name: 'Shadow', ID: 31, neighborIDs: [2, 7, 8, 13, 24], x: 236, y: 344},
+    {name: 'Sheridan', ID: 32, neighborIDs: [14, 16, 26, 39], x: 502, y: 229},
+    {name: 'Strana Mechty', ID: 33, neighborIDs: [20, 21, 24, 25, 29, 31], x: 317, y: 292},
+    {name: 'Strato Domingo', ID: 34, neighborIDs: [5, 18, 35, 40], x: 264, y: 62},
+    {name: 'Tamaron', ID: 35, neighborIDs: [22, 34], x: 232, y: 109},
+    {name: 'Tathis', ID: 36, neighborIDs: [14, 25], x: 420, y: 193},
+    {name: 'Tiber', ID: 37, neighborIDs: [30], x: 422, y: 54},
+    {name: 'Tokasha', ID: 38, neighborIDs: [3, 6, 27, 39], x: 467, y: 373},
+    {name: 'Tranquil', ID: 39, neighborIDs: [16, 26, 32, 38], x: 512, y: 320},
+    {name: 'Vinton', ID: 40, neighborIDs: [5, 34], x: 250, y: 24},
+    {name: 'York', ID: 41, neighborIDs: [1, 15, 19], x: 97, y: 213} 
+];
+
+// -----------------------------------------------
 
 function UnitacsClient() {
     console.log('client started');
     
     this.initMap();
-    //window.onresize = this.resizeMap;
     
-    this.variable = 10;
-    this.foo(0);
+    var that = this;
+    window.onresize = function() {
+        that.resizeMap();
+    };
 };
 
 UnitacsClient.prototype.initMap = function() {
@@ -16,32 +68,42 @@ UnitacsClient.prototype.initMap = function() {
     
     this.map = Raphael('map', MAP_WIDTH, MAP_HEIGHT);
     
-    this.stuffSet = this.map.set();
-    this.stuffSet.push(this.map.circle(200, 200, 50));
-    this.stuffSet.attr({stroke: "#fff"});
+    this.mapSet = this.map.set();
+    var rect = this.map.rect(0, 0, MAP_WIDTH, MAP_HEIGHT).attr({stroke: "#fff"});
+    this.mapSet.push(rect);
     
-    this.oldViewport = [MAP_WIDTH, MAP_HEIGHT];
-    //this.resizeMap();
+    for (var i = 0; i < planetsData.length; i++) {
+        var planet = this.map.circle(planetsData[i].x, planetsData[i].y, 5).attr({fill: '#ffffff',stroke: '#fffff'});
+        this.mapSet.push(planet);
+        var name = this.map.text(planetsData[i].x, planetsData[i].y - 15, planetsData[i].name).attr({fill: '#ffffff','font-size': 15});
+        this.mapSet.push(name);
+        for (var j = 0; j < planetsData[i].neighborIDs.length; j++) {
+            var edge = this.map.path('M ' + planetsData[i].x + ', ' + planetsData[i].y + ' L ' + planetsData[planetsData[i].neighborIDs[j] - 1].x + ', ' + planetsData[planetsData[i].neighborIDs[j] - 1].y + 'Z').attr({stroke: '#ffffff',opacity: 0.1});
+            this.mapSet.push(edge);
+        }
+    }
+    
+    this.resizeMap();
 };
 
 UnitacsClient.prototype.resizeMap = function() {
     console.log('map resized');
     
     var viewport = getViewport();
+    viewport[0] -= VIEWPORT_WIDTH_VARIANCE;
+    viewport[1] -= VIEWPORT_HEIGHT_VARIANCE;
     
-    var scaleX = viewport[0] / this.oldViewport[0];
-    var scaleY = viewport[1] / this.oldViewport[1];
+    this.map.setSize(viewport[0], viewport[1]);
+    
+    var scaleX = viewport[0] / MAP_WIDTH;
+    var scaleY = viewport[1] / MAP_HEIGHT;
     var scale = (scaleX > scaleY) ? scaleY : scaleX;
     
-    this.stuffSet.scale(scale,scale,0,0);
-};
-
-UnitacsClient.prototype.foo = function(arg) {
-    console.log(this.variable + arg);
+    if (scale != 1)
+        this.mapSet.scale(scale, scale, 0, 0);
 };
 
 var client = new UnitacsClient();
-client.foo(5);
 
 /*function load() {
     var planetsData = [
