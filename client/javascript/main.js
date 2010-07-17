@@ -1,12 +1,14 @@
 // constants
+var CONST = {
+    MAP: {
+        WIDTH: 1300,
+        HEIGHT: 500,
+        VIEWPORT_WIDTH_VARIANCE: 20,
+        VIEWPORT_HEIGHT_VARIANCE: 30
+    }
+};
 
-// map
-MAP_WIDTH = 600;
-MAP_HEIGHT = 500;
-VIEWPORT_WIDTH_VARIANCE = 20;
-VIEWPORT_HEIGHT_VARIANCE = 30;
-
-planetsData = [
+var planetsData = [
     {name: 'Albion', ID: 1, neighborIDs: [7, 10, 13, 19, 41], x: 135, y: 239},
     {name: 'Arcadia', ID: 2, neighborIDs: [4, 8, 9, 11, 31], x: 134, y: 449},
     {name: 'Atreus', ID: 3, neighborIDs: [12, 20, 21, 38], x: 395, y: 353},
@@ -66,22 +68,25 @@ function UnitacsClient() {
 UnitacsClient.prototype.initMap = function() {
     console.log('map initialized');
     
-    this.map = Raphael('map', MAP_WIDTH, MAP_HEIGHT);
+    this.map = Raphael('map', CONST.MAP.WIDTH, CONST.MAP.HEIGHT);
     
     this.mapSet = this.map.set();
-    var rect = this.map.rect(0, 0, MAP_WIDTH, MAP_HEIGHT).attr({stroke: "#fff"});
+    var rect = this.map.rect(0, 0, CONST.MAP.WIDTH, CONST.MAP.HEIGHT).attr({stroke: "#fff"});
     this.mapSet.push(rect);
     
+    this.planetSet = this.map.set();
+    this.nameSet = this.map.set();
+    this.edgeSet = this.map.set();
+    
     for (var i = 0; i < planetsData.length; i++) {
-        var planet = this.map.circle(planetsData[i].x, planetsData[i].y, 5).attr({fill: '#ffffff',stroke: '#fffff'});
-        this.mapSet.push(planet);
-        var name = this.map.text(planetsData[i].x, planetsData[i].y - 15, planetsData[i].name).attr({fill: '#ffffff','font-size': 15});
-        this.mapSet.push(name);
-        for (var j = 0; j < planetsData[i].neighborIDs.length; j++) {
-            var edge = this.map.path('M ' + planetsData[i].x + ', ' + planetsData[i].y + ' L ' + planetsData[planetsData[i].neighborIDs[j] - 1].x + ', ' + planetsData[planetsData[i].neighborIDs[j] - 1].y + 'Z').attr({stroke: '#ffffff',opacity: 0.1});
-            this.mapSet.push(edge);
-        }
+        this.planetSet.push(this.map.circle(planetsData[i].x, planetsData[i].y, 5));
+        this.nameSet.push(this.map.text(planetsData[i].x, planetsData[i].y - 15, planetsData[i].name));
+        for (var j = 0; j < planetsData[i].neighborIDs.length; j++)
+            this.edgeSet.push(this.map.path('M ' + planetsData[i].x + ', ' + planetsData[i].y + ' L ' + planetsData[planetsData[i].neighborIDs[j] - 1].x + ', ' + planetsData[planetsData[i].neighborIDs[j] - 1].y + 'Z'));
     }
+    this.planetSet.attr({fill: '#ffffff',stroke: '#fffff'});
+    this.nameSet.attr({fill: '#ffffff','font-size': 15});
+    this.edgeSet.attr({stroke: '#ffffff',opacity: 0.1});
     
     this.resizeMap();
 };
@@ -90,17 +95,21 @@ UnitacsClient.prototype.resizeMap = function() {
     console.log('map resized');
     
     var viewport = getViewport();
-    viewport[0] -= VIEWPORT_WIDTH_VARIANCE;
-    viewport[1] -= VIEWPORT_HEIGHT_VARIANCE;
+    viewport[0] -= CONST.MAP.VIEWPORT_WIDTH_VARIANCE;
+    viewport[1] -= CONST.MAP.VIEWPORT_HEIGHT_VARIANCE;
     
     this.map.setSize(viewport[0], viewport[1]);
     
-    var scaleX = viewport[0] / MAP_WIDTH;
-    var scaleY = viewport[1] / MAP_HEIGHT;
+    var scaleX = viewport[0] / CONST.MAP.WIDTH;
+    var scaleY = viewport[1] / CONST.MAP.HEIGHT;
     var scale = (scaleX > scaleY) ? scaleY : scaleX;
     
-    if (scale != 1)
+    if (scale != 1) {
         this.mapSet.scale(scale, scale, 0, 0);
+        this.planetSet.scale(scale, scale, 0, 0);
+        this.nameSet.scale(scale, scale, 0, 0);
+        this.edgeSet.scale(scale, scale, 0, 0);
+    }
 };
 
 var client = new UnitacsClient();
