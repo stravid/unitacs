@@ -17,16 +17,13 @@ Raphael.fn.region = function(ID, pathString, center) {
     var shape = this.path(pathString);
     var center = this.circle(center.x, center.y, CONST.MAP.CENTER_SIZE);
     var overlay = this.path(pathString).attr({opacity: 0});
+    overlay.regionID = ID;
     
     var region = this.set(shape, center, overlay).attr({fill: Raphael.getColor(), stroke: '#777', 'stroke-width': 2});
     
     region.regionID = ID;
     region.units = 0;
-    
-    region.shape = shape;
-    region.center = center;
-    region.overlay = overlay;
-    region.overlay.regionID = ID;
+    region.owner = -1;
     
     return region;
 };
@@ -89,7 +86,6 @@ Map.prototype.build = function(regions) {
     });
     
     this.regions.hover(function(event) {
-        
         that.regions[this.regionID].toFront().attr({stroke: "#fff"});
     }, function(event) {
         that.regions[this.regionID].attr({stroke: "#777"});
