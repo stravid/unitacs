@@ -1,7 +1,7 @@
 // constants
 var CONST = {
     MAP: {
-        WIDTH: 1300,
+        WIDTH: 600,
         HEIGHT: 500,
         VIEWPORT_WIDTH_VARIANCE: 20,
         VIEWPORT_HEIGHT_VARIANCE: 30
