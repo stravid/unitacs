@@ -191,7 +191,7 @@ Map.prototype.build = function(regions) {
         this.units++;
         console.log(that);
         console.log(this.regionID);
-        console.log(that.regions.items[this.regionID].units);
+        console.log(that.regions[this.regionID].units);
     });
     
     this.mapSet = this.paper.set(
