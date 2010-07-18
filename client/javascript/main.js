@@ -9,6 +9,7 @@ var CONST = {
         UNIT_SIZE: 5,
         UNIT_TO_CENTER: 20,
         UNITS_PER_REGION: 10,
+        TYPE_COLOR: ['#bbb', '#77b', '#7b7', '#b77'],
         OWNER_COLOR: ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'],
     },
 };
@@ -32,19 +33,10 @@ CONST.MAP.UNITCIRCLE_VECTOR = (
     }
 )(CONST.MAP.UNITS_PER_REGION, CONST.MAP.UNIT_TO_CENTER);
 
-// testData -----------------------------------------------
-var mapUpdate = function() {
-    var update = [];
-    for (var i = 0; i < 10; i++) {
-        update.push({ID: rand(0,49), units: rand(0,CONST.MAP.UNITS_PER_REGION), ownerID: rand(0,2)});
-    }
-    return update;
-};
-
 // Raphael -----------------------------------------------
 
 // FIXME: implement setOwner and setUnits
-Raphael.fn.region = function(ID, pathString, center) {
+Raphael.fn.region = function(ID, pathString, center, units, type, ownerID) {
     var overlay = this.path(pathString).attr({opacity: 0});
     overlay.regionID = ID;
     
@@ -53,13 +45,14 @@ Raphael.fn.region = function(ID, pathString, center) {
         this.circle(center.x, center.y, CONST.MAP.CENTER_SIZE),
         overlay
     ).attr({
-        fill: Raphael.getColor(), 
+        fill: CONST.MAP.TYPE_COLOR[type], 
         stroke: '#777', 
         'stroke-width': 2
     });
     
     region.center = center;
     region.regionID = ID;
+    region.type = type;
     
     var that = this;
     region.update = function(units, ownerID) {
@@ -75,7 +68,7 @@ Raphael.fn.region = function(ID, pathString, center) {
         this.push(that.unitCircle(units, ownerID, center));
         this.items[2].toFront();
     };
-    region.update(0, -1);
+    region.update(units, ownerID);
     
     return region;
 };
@@ -150,7 +143,7 @@ Map.prototype.build = function(regions) {
     this.regions = this.paper.set();
     
     for (var i = 0, ii = regions.length; i < ii; i++) {
-        this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center));
+        this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].type, regions[i].ownerID));
     }
     
     var that = this;
