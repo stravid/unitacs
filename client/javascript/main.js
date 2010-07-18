@@ -52,7 +52,7 @@ Raphael.fn.region = function(ID, pathString, center, units, type, ownerID) {
     
     region.center = center;
     region.regionID = ID;
-    region.type = type;
+    region.regionType = type;
     
     var that = this;
     region.update = function(units, ownerID) {
@@ -123,6 +123,59 @@ function Map(mapData) {
     };
 };
 
+Map.prototype.build = function(regions) {
+    this.paper = Raphael('map', this.width, this.height);
+    var back = this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0});
+    this.regions = this.paper.set();
+    
+    for (var i = 0, ii = regions.length; i < ii; i++) {
+        this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].type, regions[i].ownerID));
+    }
+    
+    this.mapSet = this.paper.set(
+        back,
+        this.regions
+    );
+    
+    this.initEvents();
+    this.resize();
+};
+
+Map.prototype.initEvents = function(regions) {
+    var that = this;
+    this.regions.click(function(event) {
+        that.regions[this.regionID].items[0].animate({fill: '#000'}, 500, '<');
+    });
+    
+    this.regions.hover(function(event) {
+        that.regions[this.regionID].items[0].attr({'fill-opacity': 0.5});
+    }, function(event) {
+        that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
+    });
+    
+    this.mapSet.mousedown(function(event) {
+        //FIXME: mouse-coordinates correspond to window not paper
+        that.mouse = {x: event.clientX, y: event.clientY};
+    });
+    
+    var start = function () {
+        this.o = {x: that.mouse.x, y: that.mouse.y};
+        that.mapSet.push(that.paper.rect(0, 0, 0, 0));
+    },
+    move = function (dx, dy) {
+        var ox, oy;
+        (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
+        (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
+        
+        that.mapSet.pop().remove();
+        that.mapSet.push(that.paper.rect(ox, oy, dx, dy).attr({stroke: '#000'}));
+    },
+    up = function () {
+        that.mapSet.pop().remove();
+    };
+    this.mapSet.drag(move, start, up);
+};
+
 Map.prototype.resize = function() {
     var viewport = getViewport();
     viewport[0] -= CONST.MAP.VIEWPORT_WIDTH_VARIANCE;
@@ -136,32 +189,6 @@ Map.prototype.resize = function() {
         this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
         this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
     }
-};
-
-Map.prototype.build = function(regions) {
-    this.paper = Raphael('map', this.width, this.height);
-    this.regions = this.paper.set();
-    
-    for (var i = 0, ii = regions.length; i < ii; i++) {
-        this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].type, regions[i].ownerID));
-    }
-    
-    var that = this;
-    this.regions.click(function(event) {
-        that.regions[this.regionID].items[0].animate({fill: '#000'}, 500, '<');
-    });
-    
-    this.regions.hover(function(event) {
-        that.regions[this.regionID].items[0].attr({'fill-opacity': 0.5});
-    }, function(event) {
-        that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
-    });
-    
-    this.mapSet = this.paper.set(
-        this.regions
-    );
-    
-    this.resize();
 };
 
 var client = new UnitacsClient();
