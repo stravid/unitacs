@@ -13,8 +13,8 @@ var CONST = {
 
 // Raphael -----------------------------------------------
 
+// FIXME: implement setOwner and setUnits
 Raphael.fn.region = function(ID, pathString, center) {
-    
     var shape = this.path(pathString);
     var center = this.circle(center.x, center.y, CONST.MAP.CENTER_SIZE);
     var overlay = this.path(pathString).attr({opacity: 0});
@@ -36,9 +36,8 @@ function UnitacsClient() {
 };
 
 UnitacsClient.prototype.onMessage = function(messageObject) {
-    if (messageObject.mapData) {
+    if (messageObject.mapData)
         this.map = new Map(messageObject.mapData);
-    }
 };
 
 function Map(mapData) {
@@ -81,9 +80,9 @@ Map.prototype.build = function(regions) {
         var region = that.regions[this.regionID];
         region.animate({fill: '#000'}, 500, '<');
         region.units++;
-        console.log(that);
+        console.log(this);
         console.log(this.regionID);
-        console.log(that.regions[this.regionID].units);
+        console.log(this.units);
     });
     
     this.regions.hover(function(event) {
