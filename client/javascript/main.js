@@ -9,10 +9,12 @@ var CONST = {
         UNIT_SIZE: 5,
         UNIT_TO_CENTER: 20,
         UNITS_PER_REGION: 10,
-        TYPE_COLOR: ['#bbb', '#77b', '#7b7', '#b77'],
+        TYPE_COLOR: ['#2D2B21', '#A69055', '#C9B086', '#FFB88C'],
+        STROKE_COLOR: '#141919',
         OWNER_COLOR: ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'],
         LEFT: 10,
-        TOP: 10
+        TOP: 10,
+        REGION_OVERLAY: 2,
     },
 };
 CONST.MAP.UNITCIRCLE_VECTOR = (
@@ -48,7 +50,7 @@ Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID)
         overlay
     ).attr({
         fill: CONST.MAP.TYPE_COLOR[regionType], 
-        stroke: '#777', 
+        stroke: CONST.MAP.STROKE_COLOR, 
         'stroke-width': 2
     });
     
@@ -68,7 +70,7 @@ Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID)
             this.pop().remove();
             
         this.push(that.unitCircle(units, ownerID, center));
-        this.items[2].toFront();
+        this.items[CONST.MAP.REGION_OVERLAY].toFront();
     };
     region.update(units, ownerID);
     
@@ -150,11 +152,12 @@ Map.prototype.build = function(regions) {
 
 Map.prototype.initEvents = function(regions) {
     var that = this;
-    this.regions.click(function(event) {
-        that.regions[this.regionID].items[0].animate({fill: '#000'}, 500, '<');
-    });
+    // this.regions.click(function(event) {
+    //     that.regions[this.regionID].items[0].animate({fill: '#000'}, 500, '<');
+    // });
     
     this.regions.hover(function(event) {
+        that.hoverRegion = this.regionID;
         that.regions[this.regionID].items[0].attr({'fill-opacity': 0.5});
     }, function(event) {
         that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
@@ -165,108 +168,105 @@ Map.prototype.initEvents = function(regions) {
         that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
     });
     
+    this.initUnitSelection();
+};
+
+Map.prototype.initUnitSelection = function() {
+    var that = this;
     this.selectionSet = this.paper.set();
     
+    var selectionStart = function () {
+        this.translation = {x: 0, y: 0};
+        that.selectionSet.attr({opacity: 0.5});
+        that.regionsToFront();
+    },
+    selectionMove = function (dx, dy) {
+        // FIXME: translation lags at too much units
+        dx -= this.translation.x;
+        dy -= this.translation.y;
+        
+        that.selectionSet.translate(dx, dy);
+        
+        this.translation.x += dx;
+        this.translation.y += dy;
+    },
+    selectionUp = function () {
+        that.selectionSet.animate(
+            {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
+            Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
+            (function() {that.selectionSet.attr({opacity: 1})})
+        );
+        that.selectionSet[0].toFront();
+        
+        // FIXME: call dijkstra
+    };
+    
     // FIXME: handle region-updates
-    // FIXME: click at unit of unitSet is no dragEvent
     var start = function () {
         this.o = {x: that.mouse.x, y: that.mouse.y};
         
-        // check if unitSet exists
-        if (that.selectionSet.length > 1) {
-            var rect = that.selectionSet[0].getBBox();
-            rect.x2 = rect.x + rect.width;
-            rect.y2 = rect.y + rect.height;
-            
-            // if click is in selection
-            if (this.o.x > rect.x && this.o.x < rect.x2 && 
-                this.o.y > rect.y && this.o.y < rect.y2) {
-                    // drag unitSet
-                    this.translation = {x: 0, y: 0};
-                    that.selectionSet.attr({opacity: 0.5});
-            }
-            else {
-                while (that.selectionSet.length > 0) {
-                    that.selectionSet.pop().remove();
-                }
-            }
-        }
+        that.selectionSet.undrag();
+        while (that.selectionSet.length > 0)
+            that.selectionSet.pop().remove();
     },
     move = function (dx, dy) {
-        // check if unitSet exists
-        if (that.selectionSet.length > 1) {
-            // drag unitSet
+        var ox, oy;
+        (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
+        (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
+        
+        while (that.selectionSet.length > 0)
+            that.selectionSet.pop().remove();
             
-            // FIXME: translation lags at too much units
-            dx -= this.translation.x;
-            dy -= this.translation.y;
-            
-            that.selectionSet.translate(dx, dy);
-            
-            this.translation.x += dx;
-            this.translation.y += dy;
-        }
-        // else make new selection rect
-        else {
-            var ox, oy;
-            (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
-            (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
-            
-            if (that.selectionSet.length > 0)
-                that.selectionSet.pop().remove();
-            
-            that.selectionSet.push(that.paper.rect(ox, oy, dx, dy).attr({stroke: '#ccc', 'stroke-width': 2}));
-        }
+        that.selectionSet.push(
+            that.paper.rect(ox, oy, dx, dy).attr({fill: '#fff', 'fill-opacity': 0}),
+            that.paper.rect(ox, oy, dx, dy).attr({stroke: '#ccc', 'stroke-width': 2})
+        );
     },
     up = function () {
-        // check if unitSet exists
-        if (that.selectionSet.length > 1) {
-            // drag unitSet
-            that.selectionSet.animate(
-                {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
-                Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
-                (function() {that.selectionSet.attr({opacity: 1})})
-            );
-            
-            // FIXME: call dijkstra
-        }
-        // else search for units
-        else {
-            var rect = that.selectionSet[0].getBBox();
-            rect.x2 = rect.x + rect.width;
-            rect.y2 = rect.y + rect.height;
+        var rect = that.selectionSet[0].getBBox();
+        rect.x2 = rect.x + rect.width;
+        rect.y2 = rect.y + rect.height;
         
-            var unitSet = that.paper.set();
+        var unitSet = that.paper.set();
         
-            for (var i = 0, ii = that.regions.length; i < ii; i++) {
-                var region = that.regions[i];
+        for (var i = 0, ii = that.regions.length; i < ii; i++) {
+            var region = that.regions[i];
             
-                if (region.ownerID == client.ID && region.units > 0) {
-                    var regionUnitSet = that.paper.set();
+            if (region.ownerID == client.ID && region.units > 0) {
+                var regionUnitSet = that.paper.set();
+                
+                for (var j = 0, jj = region[3].length; j < jj; j++) {
+                    var unit = region[3][j];
                     
-                    for (var j = 0, jj = region[3].length; j < jj; j++) {
-                        var unit = region[3][j];
-                    
-                        if (unit.attr('cx') > rect.x && unit.attr('cx') < rect.x2 && 
-                            unit.attr('cy') > rect.y && unit.attr('cy') < rect.y2)
-                                regionUnitSet.push(unit.clone());
-                    }
-                    
-                    if (regionUnitSet.length > 0) {
-                        regionUnitSet.regionID = region.regionID;
-                        unitSet.push(regionUnitSet);
-                    }
-                    else 
-                        regionUnitSet.remove();
+                    if (unit.attr('cx') > rect.x && unit.attr('cx') < rect.x2 && 
+                        unit.attr('cy') > rect.y && unit.attr('cy') < rect.y2)
+                            regionUnitSet.push(unit.clone());
                 }
+                
+                if (regionUnitSet.length > 0) {
+                    regionUnitSet.regionID = region.regionID;
+                    unitSet.push(regionUnitSet);
+                }
+                else 
+                    regionUnitSet.remove();
             }
-            if (unitSet.length > 0)
-                that.selectionSet.push(unitSet.attr({fill: '#fff'}));
-            else 
-                unitSet.remove();
+        }
+        if (unitSet.length > 0) {
+            that.selectionSet.push(unitSet.attr({fill: '#fff'}));
+            that.selectionSet.drag(selectionMove, selectionStart, selectionUp);
+        }
+        else {
+            unitSet.remove();
+            that.selectionSet[0].toBack();
         }
     };
     this.mapSet.drag(move, start, up);
+};
+
+Map.prototype.regionsToFront = function() {
+    for (var i = 0, ii = this.regions.length; i < ii; i++) {
+        this.regions[i][CONST.MAP.REGION_OVERLAY].toFront();
+    }
 };
 
 Map.prototype.getRoute = function(departureID, destinationID) {
@@ -280,9 +280,9 @@ Map.prototype.getRoute = function(departureID, destinationID) {
             if (i != departureID) {
                 var route = new Array();
                 var node = i;
-
+                
                 route.push(i);
-
+                
                 while (predecessors[node] != undefined) {
                     route.unshift(predecessors[node]);
                     node = predecessors[node];
@@ -310,6 +310,7 @@ Map.prototype.resize = function() {
         this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
         this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
         
+        this.selectionSet.undrag();
         while (this.selectionSet.length > 0) {
             this.selectionSet.pop().remove();
         }
@@ -408,3 +409,107 @@ function Dijkstra(adjacencyMatrix, source) {
 function rand(minimum, maximum) {
     return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 };
+
+/*
+// FIXME: handle region-updates
+// FIXME: click at unit of unitSet is no dragEvent
+var start = function () {
+    this.o = {x: that.mouse.x, y: that.mouse.y};
+
+    // check if unitSet exists
+    if (that.selectionSet.length > 1) {
+        var rect = that.selectionSet[0].getBBox();
+        rect.x2 = rect.x + rect.width;
+        rect.y2 = rect.y + rect.height;
+
+        // if click is in selection
+        if (this.o.x > rect.x && this.o.x < rect.x2 && 
+            this.o.y > rect.y && this.o.y < rect.y2) {
+                // drag unitSet
+                this.translation = {x: 0, y: 0};
+                that.selectionSet.attr({opacity: 0.5});
+        }
+        else {
+            while (that.selectionSet.length > 0) {
+                that.selectionSet.pop().remove();
+            }
+        }
+    }
+},
+move = function (dx, dy) {
+    // check if unitSet exists
+    if (that.selectionSet.length > 1) {
+        // drag unitSet
+
+        // FIXME: translation lags at too much units
+        dx -= this.translation.x;
+        dy -= this.translation.y;
+
+        that.selectionSet.translate(dx, dy);
+
+        this.translation.x += dx;
+        this.translation.y += dy;
+    }
+    // else make new selection rect
+    else {
+        var ox, oy;
+        (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
+        (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
+
+        if (that.selectionSet.length > 0)
+            that.selectionSet.pop().remove();
+
+        that.selectionSet.push(that.paper.rect(ox, oy, dx, dy).attr({fill: #fff, 'fill-opacity': 0, stroke: '#ccc', 'stroke-width': 2}));
+    }
+},
+up = function () {
+    // check if unitSet exists
+    if (that.selectionSet.length > 1) {
+        // drag unitSet
+        that.selectionSet.animate(
+            {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
+            Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
+            (function() {that.selectionSet.attr({opacity: 1})})
+        );
+
+        // FIXME: call dijkstra
+    }
+    // else search for units
+    else {
+        var rect = that.selectionSet[0].getBBox();
+        rect.x2 = rect.x + rect.width;
+        rect.y2 = rect.y + rect.height;
+
+        var unitSet = that.paper.set();
+
+        for (var i = 0, ii = that.regions.length; i < ii; i++) {
+            var region = that.regions[i];
+
+            if (region.ownerID == client.ID && region.units > 0) {
+                var regionUnitSet = that.paper.set();
+
+                for (var j = 0, jj = region[3].length; j < jj; j++) {
+                    var unit = region[3][j];
+
+                    if (unit.attr('cx') > rect.x && unit.attr('cx') < rect.x2 && 
+                        unit.attr('cy') > rect.y && unit.attr('cy') < rect.y2)
+                            regionUnitSet.push(unit.clone());
+                }
+
+                if (regionUnitSet.length > 0) {
+                    regionUnitSet.regionID = region.regionID;
+                    unitSet.push(regionUnitSet);
+                }
+                else 
+                    regionUnitSet.remove();
+            }
+        }
+        if (unitSet.length > 0) {
+            that.selectionSet.push(unitSet.attr({fill: '#fff'}));
+            that.selectionSet.drag(selectionMove, selectionStart, selectionUp);
+        }
+        else 
+            unitSet.remove();
+    }
+};
+this.mapSet.drag(move, start, up);*/
