@@ -17,8 +17,8 @@ var playerList = [
 var mapUpdate = function() {
     var update = [];
     
-    for (var i = 0; i < 100; i++) {
-        update.push({ID: rand(0,49), units: rand(0,CONST.MAP.UNITS_PER_REGION), ownerID: playerList[rand(0, playerList.length - 1)].ID});
+    for (var i = 0; i < 50; i++) {
+        update.push({ID: rand(0, mapData.regions.length - 1), units: rand(0, CONST.MAP.UNITS_PER_REGION), ownerID: playerList[rand(0, playerList.length - 1)].ID});
     }
     
     return update;

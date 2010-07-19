@@ -152,6 +152,7 @@ function Map(mapData) {
 Map.prototype.build = function(regions) {
     this.paper = Raphael('map', this.width, this.height);
     this.regions = this.paper.set();
+    this.paths = this.paper.set();
     
     for (var i = 0, ii = regions.length; i < ii; i++) {
         this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].regionType, regions[i].ownerID));
@@ -159,7 +160,8 @@ Map.prototype.build = function(regions) {
     
     this.mapSet = this.paper.set(
         this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0}).toBack(),
-        this.regions
+        this.regions,
+        this.paths
     );
     
     this.initEvents();
@@ -215,6 +217,11 @@ Map.prototype.initUnitSelection = function() {
         that.selectionSet[0].toFront();
         
         // FIXME: call dijkstra
+        for (var i = 0, ii = that.selectionSet[2].length; i < ii; i++) {
+            that.drawRoute(that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion));
+            
+            // FIXME: send moveData
+        }
     };
     
     // FIXME: handle region-updates
@@ -285,6 +292,25 @@ Map.prototype.regionsToFront = function() {
     }
 };
 
+Map.prototype.drawRoute = function(route) {
+    console.log(route);
+    var pathString = 'M ' + this.regions[route[0]].center.x + ' ' + this.regions[route[0]].center.y;
+    
+    for (var i = 1, ii = route.length; i < ii; i++) {
+        pathString += 'L ' + this.regions[route[i]].center.x + ' ' + this.regions[route[i]].center.y;
+    }
+    
+    this.paths.push(
+        this.paper.path(pathString).attr({
+            stroke: '#fff', 
+            'stroke-width': 3, 
+            scale: (CONST.MAP.SCALE + ' ' + CONST.MAP.SCALE + ' ' + 0 + ' ' + 0)
+        })
+    );
+};
+
+// FIXME: case: departureID == destinationID
+// FIXME: should we prepare for a case where is no route?
 Map.prototype.getRoute = function(departureID, destinationID) {
     if (this.routes[departureID].length != 0)
         return this.routes[departureID][destinationID];
