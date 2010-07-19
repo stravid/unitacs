@@ -15,8 +15,9 @@ var CONST = {
         PLAYERS: {},
         LEFT: 10,
         TOP: 10,
-        REGION_OVERLAY: 2,
+        REGION_OVERLAY: 2
     },
+    MY_ID: 0
 };
 
 CONST.MAP.UNITCIRCLE_VECTOR = (
@@ -70,7 +71,7 @@ Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID)
         
         if (this.items.length > 3)
             this.pop().remove();
-            
+        
         this.push(that.unitCircle(units, ownerID, center));
         this.items[CONST.MAP.REGION_OVERLAY].toFront();
     };
@@ -102,7 +103,6 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
 // UnitacsClient ----------------------------------------------
 
 function UnitacsClient() {
-    this.ID = 0;
 };
 
 UnitacsClient.prototype.onMessage = function(messageObject) {
@@ -114,10 +114,17 @@ UnitacsClient.prototype.onMessage = function(messageObject) {
        
     if (messageObject.mapUpdate) {
         for (var i = 0, ii = messageObject.mapUpdate.length; i < ii; i++) {
-            var updateObject = messageObject.mapUpdate[i];
-            this.map.regions[updateObject.ID].update(updateObject.units, updateObject.ownerID);
+            var update = messageObject.mapUpdate[i];
+            this.map.regions[update.ID].update(update.units, update.ownerID);
         }
-    }   
+    }
+    
+    if (messageObject.moveUnits) {
+        for (var i = 0, ii = messageObject.moveUnits.length; i < ii; i++) {
+            var move = messageObject.moveUnits[i];
+            this.map.createMove(move.departureID, move.destinationID, move.units, move.playerID, move.duration);
+        }
+    }
 };
 
 UnitacsClient.prototype.setPlayers = function(playerList) {
@@ -153,6 +160,7 @@ Map.prototype.build = function(regions) {
     this.paper = Raphael('map', this.width, this.height);
     this.regions = this.paper.set();
     this.paths = this.paper.set();
+    this.moves = this.paper.set();
     
     for (var i = 0, ii = regions.length; i < ii; i++) {
         this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].regionType, regions[i].ownerID));
@@ -161,7 +169,8 @@ Map.prototype.build = function(regions) {
     this.mapSet = this.paper.set(
         this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0}).toBack(),
         this.regions,
-        this.paths
+        this.paths,
+        this.moves
     );
     
     this.initEvents();
@@ -170,9 +179,6 @@ Map.prototype.build = function(regions) {
 
 Map.prototype.initEvents = function(regions) {
     var that = this;
-    // this.regions.click(function(event) {
-    //     that.regions[this.regionID].items[0].animate({fill: '#000'}, 500, '<');
-    // });
     
     this.regions.hover(function(event) {
         that.hoverRegion = this.regionID;
@@ -217,9 +223,11 @@ Map.prototype.initUnitSelection = function() {
         that.selectionSet[0].toFront();
         
         for (var i = 0, ii = that.selectionSet[2].length; i < ii; i++) {
-            that.drawRoute(that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion));
-            
-            // FIXME: send moveData
+            if (that.selectionSet[2][i].regionID != that.hoverRegion) {
+                that.drawRoute(that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion));
+                
+                // FIXME: send moveData
+            }
         }
     };
     
@@ -254,7 +262,8 @@ Map.prototype.initUnitSelection = function() {
         for (var i = 0, ii = that.regions.length; i < ii; i++) {
             var region = that.regions[i];
             
-            if (region.ownerID == client.ID && region.units > 0) {
+            // FIXME: need my ID
+            if (region.ownerID == CONST.MY_ID && region.units > 0) {
                 var regionUnitSet = that.paper.set();
                 
                 for (var j = 0, jj = region[3].length; j < jj; j++) {
@@ -292,7 +301,6 @@ Map.prototype.regionsToFront = function() {
 };
 
 Map.prototype.drawRoute = function(route) {
-    console.log(route);
     var pathString = 'M ' + this.regions[route[0]].center.x + ' ' + this.regions[route[0]].center.y;
     
     for (var i = 1, ii = route.length; i < ii; i++) {
@@ -308,8 +316,6 @@ Map.prototype.drawRoute = function(route) {
     );
 };
 
-// FIXME: case: departureID == destinationID
-// FIXME: should we prepare for a case where is no route?
 Map.prototype.getRoute = function(departureID, destinationID) {
     if (this.routes[departureID].length != 0)
         return this.routes[departureID][destinationID];
@@ -356,6 +362,25 @@ Map.prototype.resize = function() {
             this.selectionSet.pop().remove();
         }
     }
+};
+
+Map.prototype.createMove = function(departureID, destinationID, units, playerID, duration) {
+    // FIXME: necesarry?
+    if (departureID == destinationID || units == 0)
+        return;
+    
+    var translation = {x: (this.regions[destinationID].center.x - this.regions[departureID].center.x) * CONST.MAP.SCALE, 
+                        y: (this.regions[destinationID].center.y - this.regions[departureID].center.y) * CONST.MAP.SCALE};
+    
+    
+    // FIXME move misses destination after resize
+    this.moves.push(
+        this.paper.unitCircle(units, playerID, this.regions[departureID].center).animate(
+            {translation: translation.x + " " + translation.y, rotation: 360},
+            duration,
+            (function(){this.remove()})
+        )
+    );
 };
 
 var client = new UnitacsClient();

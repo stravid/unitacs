@@ -18,11 +18,31 @@ var mapUpdate = function() {
     var update = [];
     
     for (var i = 0; i < 50; i++) {
-        update.push({ID: rand(0, mapData.regions.length - 1), units: rand(0, CONST.MAP.UNITS_PER_REGION), ownerID: playerList[rand(0, playerList.length - 1)].ID});
+        update.push({
+            ID: rand(0, mapData.regions.length - 1), 
+            units: rand(0, CONST.MAP.UNITS_PER_REGION), 
+            ownerID: playerList[rand(0, playerList.length - 1)].ID
+        });
     }
     
     return update;
 };
 
-client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate(), listOfPlayersInGame: playerList});
-//setInterval("client.onMessage({'mapUpdate': mapUpdate()})", 3000);
+var moveUnits = function() {
+    var move = [];
+    
+    for (var i = 0; i < 10; i++) {
+        move.push({
+            departureID: rand(0, mapData.regions.length - 1),
+            destinationID: rand(0, mapData.regions.length - 1),
+            units: rand(1, CONST.MAP.UNITS_PER_REGION), 
+            playerID: playerList[rand(0, playerList.length - 1)].ID,
+            duration: 3000
+        });
+    }
+    
+    return move;
+};
+
+client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate(), listOfPlayersInGame: playerList, 'moveUnits': moveUnits()});
+//setInterval("client.onMessage({'moveUnits': moveUnits()})", 1000);
