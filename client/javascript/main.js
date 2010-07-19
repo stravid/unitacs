@@ -36,7 +36,7 @@ CONST.MAP.UNITCIRCLE_VECTOR = (
 // Raphael -----------------------------------------------
 
 // FIXME: implement setOwner and setUnits
-Raphael.fn.region = function(ID, pathString, center, units, type, ownerID) {
+Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID) {
     var overlay = this.path(pathString).attr({opacity: 0});
     overlay.regionID = ID;
     
@@ -45,14 +45,14 @@ Raphael.fn.region = function(ID, pathString, center, units, type, ownerID) {
         this.circle(center.x, center.y, CONST.MAP.CENTER_SIZE),
         overlay
     ).attr({
-        fill: CONST.MAP.TYPE_COLOR[type], 
+        fill: CONST.MAP.TYPE_COLOR[regionType], 
         stroke: '#777', 
         'stroke-width': 2
     });
     
     region.center = center;
     region.regionID = ID;
-    region.type = type;
+    region.regionType = regionType;
     
     var that = this;
     region.update = function(units, ownerID) {
@@ -114,6 +114,12 @@ UnitacsClient.prototype.onMessage = function(messageObject) {
 function Map(mapData) {
     this.height = mapData.height;
     this.width = mapData.width;
+    this.adjacencyMatrix = mapData.adjacencyMatrix;
+    this.routes = new Array();
+    
+    for (var i = 0; i < mapData.regions.length; i++) {
+        this.routes[i] = new Array();
+    }
     
     this.build(mapData.regions);
     
@@ -143,7 +149,7 @@ Map.prototype.build = function(regions) {
     this.regions = this.paper.set();
     
     for (var i = 0, ii = regions.length; i < ii; i++) {
-        this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].type, regions[i].ownerID));
+        this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].regionType, regions[i].ownerID));
     }
     
     var that = this;
@@ -162,6 +168,34 @@ Map.prototype.build = function(regions) {
     );
     
     this.resize();
+};
+
+Map.prototype.getRoute = function(departureID, destinationID) {
+    if (this.routes[departureID].length != 0)
+        return this.routes[departureID][destinationID];
+    else {
+        var dijkstra = new Dijkstra(this.adjacencyMatrix, departureID);
+        var predecessors = dijkstra.getPredecessors();
+        
+        for (var i = 0; i < this.regions.length; i++) {
+            if (i != departureID) {
+                var route = new Array();
+                var node = i;
+
+                route.push(i);
+
+                while (predecessors[node] != undefined) {
+                    route.unshift(predecessors[node]);
+                    node = predecessors[node];
+                }
+                
+                this.routes[departureID][i] = new Array();
+                this.routes[departureID][i] = route;
+            }
+        }
+        
+        return this.routes[departureID][destinationID];
+    }    
 };
 
 var client = new UnitacsClient();
@@ -196,7 +230,7 @@ function getViewport() {
     
     return [viewPortWidth, viewPortHeight];
 };
-/*
+
 function Dijkstra(adjacencyMatrix, source) {
     this.matrix = adjacencyMatrix;
     this.nodes = new Array();
@@ -204,7 +238,6 @@ function Dijkstra(adjacencyMatrix, source) {
     this.source = source;
     this.distance = new Array();
     this.predecessor = new Array();
-    
     
     this.initialize = function() {
         for (var i = 0; i < this.matrix.length; i++) {
@@ -255,8 +288,8 @@ function Dijkstra(adjacencyMatrix, source) {
     this.getPredecessors = function() {
         return this.predecessor;
     }
-};*/
+};
 
 function rand(minimum, maximum) {
     return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
-}
+};

@@ -2,7 +2,7 @@ var mapData = {width:1400, height:800, regions:[{center:{x:108.25317547305482, y
 
 for (var i = 0; i < mapData.regions.length; i++) {
     mapData.regions[i].units = 0;
-    mapData.regions[i].type = i % 4;
+    mapData.regions[i].regionType = i % 4;
     mapData.regions[i].ownerID = 0;
 }
 
