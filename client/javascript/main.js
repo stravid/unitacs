@@ -11,6 +11,8 @@ var CONST = {
         UNITS_PER_REGION: 10,
         TYPE_COLOR: ['#bbb', '#77b', '#7b7', '#b77'],
         OWNER_COLOR: ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'],
+        LEFT: 10,
+        TOP: 10
     },
 };
 CONST.MAP.UNITCIRCLE_VECTOR = (
@@ -96,7 +98,7 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
 // UnitacsClient ----------------------------------------------
 
 function UnitacsClient() {
-    
+    this.ID = 0;
 };
 
 UnitacsClient.prototype.onMessage = function(messageObject) {
@@ -125,7 +127,6 @@ function Map(mapData) {
 
 Map.prototype.build = function(regions) {
     this.paper = Raphael('map', this.width, this.height);
-    var back = this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0});
     this.regions = this.paper.set();
     
     for (var i = 0, ii = regions.length; i < ii; i++) {
@@ -133,7 +134,7 @@ Map.prototype.build = function(regions) {
     }
     
     this.mapSet = this.paper.set(
-        back,
+        this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0}).toBack(),
         this.regions
     );
     
@@ -155,23 +156,109 @@ Map.prototype.initEvents = function(regions) {
     
     this.mapSet.mousedown(function(event) {
         //FIXME: mouse-coordinates correspond to window not paper
-        that.mouse = {x: event.clientX, y: event.clientY};
+        that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
     });
     
+    this.selectionSet = this.paper.set();
+    
+    // FIXME: handle region-updates
+    // FIXME: click at unit of unitSet is no dragEvent
     var start = function () {
         this.o = {x: that.mouse.x, y: that.mouse.y};
-        that.mapSet.push(that.paper.rect(0, 0, 0, 0));
+        
+        // check if unitSet exists
+        if (that.selectionSet.length > 1) {
+            var rect = that.selectionSet[0].getBBox();
+            rect.x2 = rect.x + rect.width;
+            rect.y2 = rect.y + rect.height;
+            
+            // if click is in selection
+            if (this.o.x > rect.x && this.o.x < rect.x2 && 
+                this.o.y > rect.y && this.o.y < rect.y2) {
+                    // drag unitSet
+                    this.translation = {x: 0, y: 0};
+                    that.selectionSet.attr({opacity: 0.5});
+            }
+            else {
+                while (that.selectionSet.length > 0) {
+                    that.selectionSet.pop().remove();
+                }
+            }
+        }
     },
     move = function (dx, dy) {
-        var ox, oy;
-        (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
-        (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
-        
-        that.mapSet.pop().remove();
-        that.mapSet.push(that.paper.rect(ox, oy, dx, dy).attr({stroke: '#000'}));
+        // check if unitSet exists
+        if (that.selectionSet.length > 1) {
+            // drag unitSet
+            
+            // FIXME: translation lags at too much units
+            dx -= this.translation.x;
+            dy -= this.translation.y;
+            
+            that.selectionSet.translate(dx, dy);
+            
+            this.translation.x += dx;
+            this.translation.y += dy;
+        }
+        // else make new selection rect
+        else {
+            var ox, oy;
+            (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
+            (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
+            
+            if (that.selectionSet.length > 0)
+                that.selectionSet.pop().remove();
+            
+            that.selectionSet.push(that.paper.rect(ox, oy, dx, dy).attr({stroke: '#ccc', 'stroke-width': 2}));
+        }
     },
     up = function () {
-        that.mapSet.pop().remove();
+        // check if unitSet exists
+        if (that.selectionSet.length > 1) {
+            // drag unitSet
+            that.selectionSet.animate(
+                {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
+                Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
+                (function() {that.selectionSet.attr({opacity: 1})})
+            );
+            
+            // FIXME: call dijkstra
+        }
+        // else search for units
+        else {
+            var rect = that.selectionSet[0].getBBox();
+            rect.x2 = rect.x + rect.width;
+            rect.y2 = rect.y + rect.height;
+        
+            var unitSet = that.paper.set();
+        
+            for (var i = 0, ii = that.regions.length; i < ii; i++) {
+                var region = that.regions[i];
+            
+                if (region.ownerID == client.ID && region.units > 0) {
+                    var regionUnitSet = that.paper.set();
+                    
+                    for (var j = 0, jj = region[3].length; j < jj; j++) {
+                        var unit = region[3][j];
+                    
+                        if (unit.attr('cx') > rect.x && unit.attr('cx') < rect.x2 && 
+                            unit.attr('cy') > rect.y && unit.attr('cy') < rect.y2)
+                                regionUnitSet.push(unit.clone());
+                    }
+                    
+                    if (regionUnitSet.length > 0) {
+                        regionUnitSet.regionID = region.regionID;
+                        unitSet.push(regionUnitSet);
+                    }
+                    else 
+                        regionUnitSet.remove();
+                }
+            }
+            if (unitSet.length > 0)
+                that.selectionSet.push(unitSet.attr({fill: '#fff'}));
+            else 
+                unitSet.remove();
+        }
     };
     this.mapSet.drag(move, start, up);
 };
@@ -188,13 +275,14 @@ Map.prototype.resize = function() {
     if (CONST.MAP.SCALE != 1) {
         this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
         this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
+        
+        while (this.selectionSet.length > 0) {
+            this.selectionSet.pop().remove();
+        }
     }
 };
 
 var client = new UnitacsClient();
-
-client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate()});
-setInterval("client.onMessage({'mapUpdate': mapUpdate()})", 3000);
 
 // http://andylangton.co.uk/articles/javascript/get-viewport-size-javascript/
 function getViewport() {

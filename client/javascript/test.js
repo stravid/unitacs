@@ -8,8 +8,11 @@ for (var i = 0; i < mapData.regions.length; i++) {
 
 var mapUpdate = function() {
     var update = [];
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 100; i++) {
         update.push({ID: rand(0,49), units: rand(0,CONST.MAP.UNITS_PER_REGION), ownerID: rand(0,2)});
     }
     return update;
 };
+
+client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate()});
+//setInterval("client.onMessage({'mapUpdate': mapUpdate()})", 3000);
