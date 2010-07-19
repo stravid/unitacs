@@ -216,7 +216,6 @@ Map.prototype.initUnitSelection = function() {
         );
         that.selectionSet[0].toFront();
         
-        // FIXME: call dijkstra
         for (var i = 0, ii = that.selectionSet[2].length; i < ii; i++) {
             that.drawRoute(that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion));
             
