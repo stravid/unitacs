@@ -6,13 +6,23 @@ for (var i = 0; i < mapData.regions.length; i++) {
     mapData.regions[i].ownerID = 0;
 }
 
+var playerList = [
+    {name: 'stravid', ID: 42},
+    {name: 'ebsi', ID: 1337},
+    {name: 'ChrizZz', ID: 12},
+    {name: 'fränk', ID: 234},
+    {name: 'bttr.', ID: 0}
+];
+
 var mapUpdate = function() {
     var update = [];
+    
     for (var i = 0; i < 100; i++) {
-        update.push({ID: rand(0,49), units: rand(0,CONST.MAP.UNITS_PER_REGION), ownerID: rand(0,2)});
+        update.push({ID: rand(0,49), units: rand(0,CONST.MAP.UNITS_PER_REGION), ownerID: playerList[rand(0, playerList.length - 1)].ID});
     }
+    
     return update;
 };
 
-client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate()});
+client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate(), listOfPlayersInGame: playerList});
 //setInterval("client.onMessage({'mapUpdate': mapUpdate()})", 3000);
