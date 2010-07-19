@@ -11,6 +11,8 @@ var CONST = {
         UNITS_PER_REGION: 10,
         TYPE_COLOR: ['#bbb', '#77b', '#7b7', '#b77'],
         OWNER_COLOR: ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'],
+        LEFT: 10,
+        TOP: 10
     },
 };
 CONST.MAP.UNITCIRCLE_VECTOR = (
@@ -53,7 +55,7 @@ Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID)
     region.center = center;
     region.regionID = ID;
     region.regionType = regionType;
-    
+
     var that = this;
     region.update = function(units, ownerID) {
         this.units = units;
@@ -96,7 +98,7 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
 // UnitacsClient ----------------------------------------------
 
 function UnitacsClient() {
-    
+    this.ID = 0;
 };
 
 UnitacsClient.prototype.onMessage = function(messageObject) {
@@ -129,21 +131,6 @@ function Map(mapData) {
     };
 };
 
-Map.prototype.resize = function() {
-    var viewport = getViewport();
-    viewport[0] -= CONST.MAP.VIEWPORT_WIDTH_VARIANCE;
-    viewport[1] -= CONST.MAP.VIEWPORT_HEIGHT_VARIANCE;
-    
-    var scaleX = viewport[0] / this.width;
-    var scaleY = viewport[1] / this.height;
-    CONST.MAP.SCALE = (scaleX > scaleY) ? scaleY : scaleX;
-    
-    if (CONST.MAP.SCALE != 1) {
-        this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
-        this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
-    }
-};
-
 Map.prototype.build = function(regions) {
     this.paper = Raphael('map', this.width, this.height);
     this.regions = this.paper.set();
@@ -152,6 +139,16 @@ Map.prototype.build = function(regions) {
         this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].regionType, regions[i].ownerID));
     }
     
+    this.mapSet = this.paper.set(
+        this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0}).toBack(),
+        this.regions
+    );
+    
+    this.initEvents();
+    this.resize();
+};
+
+Map.prototype.initEvents = function(regions) {
     var that = this;
     this.regions.click(function(event) {
         that.regions[this.regionID].items[0].animate({fill: '#000'}, 500, '<');
@@ -163,11 +160,113 @@ Map.prototype.build = function(regions) {
         that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
     });
     
-    this.mapSet = this.paper.set(
-        this.regions
-    );
+    this.mapSet.mousedown(function(event) {
+        //FIXME: mouse-coordinates correspond to window not paper
+        that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
+    });
     
-    this.resize();
+    this.selectionSet = this.paper.set();
+    
+    // FIXME: handle region-updates
+    // FIXME: click at unit of unitSet is no dragEvent
+    var start = function () {
+        this.o = {x: that.mouse.x, y: that.mouse.y};
+        
+        // check if unitSet exists
+        if (that.selectionSet.length > 1) {
+            var rect = that.selectionSet[0].getBBox();
+            rect.x2 = rect.x + rect.width;
+            rect.y2 = rect.y + rect.height;
+            
+            // if click is in selection
+            if (this.o.x > rect.x && this.o.x < rect.x2 && 
+                this.o.y > rect.y && this.o.y < rect.y2) {
+                    // drag unitSet
+                    this.translation = {x: 0, y: 0};
+                    that.selectionSet.attr({opacity: 0.5});
+            }
+            else {
+                while (that.selectionSet.length > 0) {
+                    that.selectionSet.pop().remove();
+                }
+            }
+        }
+    },
+    move = function (dx, dy) {
+        // check if unitSet exists
+        if (that.selectionSet.length > 1) {
+            // drag unitSet
+            
+            // FIXME: translation lags at too much units
+            dx -= this.translation.x;
+            dy -= this.translation.y;
+            
+            that.selectionSet.translate(dx, dy);
+            
+            this.translation.x += dx;
+            this.translation.y += dy;
+        }
+        // else make new selection rect
+        else {
+            var ox, oy;
+            (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
+            (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
+            
+            if (that.selectionSet.length > 0)
+                that.selectionSet.pop().remove();
+            
+            that.selectionSet.push(that.paper.rect(ox, oy, dx, dy).attr({stroke: '#ccc', 'stroke-width': 2}));
+        }
+    },
+    up = function () {
+        // check if unitSet exists
+        if (that.selectionSet.length > 1) {
+            // drag unitSet
+            that.selectionSet.animate(
+                {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
+                Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
+                (function() {that.selectionSet.attr({opacity: 1})})
+            );
+            
+            // FIXME: call dijkstra
+        }
+        // else search for units
+        else {
+            var rect = that.selectionSet[0].getBBox();
+            rect.x2 = rect.x + rect.width;
+            rect.y2 = rect.y + rect.height;
+        
+            var unitSet = that.paper.set();
+        
+            for (var i = 0, ii = that.regions.length; i < ii; i++) {
+                var region = that.regions[i];
+            
+                if (region.ownerID == client.ID && region.units > 0) {
+                    var regionUnitSet = that.paper.set();
+                    
+                    for (var j = 0, jj = region[3].length; j < jj; j++) {
+                        var unit = region[3][j];
+                    
+                        if (unit.attr('cx') > rect.x && unit.attr('cx') < rect.x2 && 
+                            unit.attr('cy') > rect.y && unit.attr('cy') < rect.y2)
+                                regionUnitSet.push(unit.clone());
+                    }
+                    
+                    if (regionUnitSet.length > 0) {
+                        regionUnitSet.regionID = region.regionID;
+                        unitSet.push(regionUnitSet);
+                    }
+                    else 
+                        regionUnitSet.remove();
+                }
+            }
+            if (unitSet.length > 0)
+                that.selectionSet.push(unitSet.attr({fill: '#fff'}));
+            else 
+                unitSet.remove();
+        }
+    };
+    this.mapSet.drag(move, start, up);
 };
 
 Map.prototype.getRoute = function(departureID, destinationID) {
@@ -198,10 +297,26 @@ Map.prototype.getRoute = function(departureID, destinationID) {
     }    
 };
 
-var client = new UnitacsClient();
+Map.prototype.resize = function() {
+    var viewport = getViewport();
+    viewport[0] -= CONST.MAP.VIEWPORT_WIDTH_VARIANCE;
+    viewport[1] -= CONST.MAP.VIEWPORT_HEIGHT_VARIANCE;
+    
+    var scaleX = viewport[0] / this.width;
+    var scaleY = viewport[1] / this.height;
+    CONST.MAP.SCALE = (scaleX > scaleY) ? scaleY : scaleX;
+    
+    if (CONST.MAP.SCALE != 1) {
+        this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
+        this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
+        
+        while (this.selectionSet.length > 0) {
+            this.selectionSet.pop().remove();
+        }
+    }
+};
 
-client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate()});
-setInterval("client.onMessage({'mapUpdate': mapUpdate()})", 3000);
+var client = new UnitacsClient();
 
 // http://andylangton.co.uk/articles/javascript/get-viewport-size-javascript/
 function getViewport() {
