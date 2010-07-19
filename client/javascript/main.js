@@ -10,11 +10,13 @@ var CONST = {
         UNIT_TO_CENTER: 20,
         UNITS_PER_REGION: 10,
         TYPE_COLOR: ['#bbb', '#77b', '#7b7', '#b77'],
-        OWNER_COLOR: ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'],
+        OWNER_COLOR: ['#0cdbf8', '#05e200', '#f60', '#f65c7d', '#d92727', '#06c'],
+        PLAYERS: {},
         LEFT: 10,
         TOP: 10
     },
 };
+
 CONST.MAP.UNITCIRCLE_VECTOR = (
     function(number, distance){
         var vector = {x: 0, y: -distance};
@@ -87,7 +89,7 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
                 center.y + CONST.MAP.UNITCIRCLE_VECTOR[i].y,
                 CONST.MAP.UNIT_SIZE
             ).attr({
-                fill: CONST.MAP.OWNER_COLOR[ownerID],
+                fill: CONST.MAP.PLAYERS[ownerID].color,
             })
         );
     }
@@ -104,12 +106,26 @@ function UnitacsClient() {
 UnitacsClient.prototype.onMessage = function(messageObject) {
     if (messageObject.mapData)
         this.map = new Map(messageObject.mapData);
-        
+    
+    if (messageObject.listOfPlayersInGame)
+        this.setPlayers(messageObject.listOfPlayersInGame);
+       
     if (messageObject.mapUpdate) {
         for (var i = 0, ii = messageObject.mapUpdate.length; i < ii; i++) {
             var updateObject = messageObject.mapUpdate[i];
             this.map.regions[updateObject.ID].update(updateObject.units, updateObject.ownerID);
         }
+    }   
+};
+
+UnitacsClient.prototype.setPlayers = function(playerList) {
+    CONST.MAP.PLAYERS = {};
+    
+    for (var i = 0; i < playerList.length; i++) {
+        CONST.MAP.PLAYERS[playerList[i].ID] = {
+            name: playerList[i].name,
+            color: CONST.MAP.OWNER_COLOR[i]
+        };
     }
 };
 
