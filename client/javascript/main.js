@@ -179,14 +179,6 @@ Map.prototype.build = function(regions) {
 
 Map.prototype.initEvents = function(regions) {
     var that = this;
-    
-    this.regions.hover(function(event) {
-        that.hoverRegion = this.regionID;
-        that.regions[this.regionID].items[0].attr({'fill-opacity': 0.5});
-    }, function(event) {
-        that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
-    });
-    
     this.mapSet.mousedown(function(event) {
         //FIXME: mouse-coordinates correspond to window not paper
         that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
@@ -195,6 +187,24 @@ Map.prototype.initEvents = function(regions) {
     this.initUnitSelection();
 };
 
+Map.prototype.hoverRegions = function() {
+    var that = this;
+    this.regionsToFront();
+    this.regions.hover(function(event) {
+        that.hoverRegion = this.regionID;
+        that.regions[this.regionID].items[0].attr({'fill-opacity': 0.5});
+    }, function(event) {
+        that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
+    });
+    
+    this.regions.mouseout(function(event) {that.hoverRegion = -1});
+}
+
+Map.prototype.unhoverRegions = function() {
+    this.regions.unhover();
+    this.regions.unmouseout();
+}
+
 Map.prototype.initUnitSelection = function() {
     var that = this;
     this.selectionSet = this.paper.set();
@@ -202,7 +212,8 @@ Map.prototype.initUnitSelection = function() {
     var selectionStart = function () {
         this.translation = {x: 0, y: 0};
         that.selectionSet.attr({opacity: 0.5});
-        that.regionsToFront();
+        
+        that.hoverRegions();
     },
     selectionMove = function (dx, dy) {
         // FIXME: translation lags at too much units
@@ -215,25 +226,32 @@ Map.prototype.initUnitSelection = function() {
         this.translation.y += dy;
     },
     selectionUp = function () {
-        that.selectionSet.animate(
-            {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
-            Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
-            (function() {that.selectionSet.attr({opacity: 1})})
-        );
-        that.selectionSet[0].toFront();
+        that.unhoverRegions();
         
+        var moved = false;
         for (var i = 0, ii = that.selectionSet[2].length; i < ii; i++) {
-            if (that.selectionSet[2][i].regionID != that.hoverRegion) {
+            if (that.hoverRegion >= 0 && that.selectionSet[2][i].regionID != that.hoverRegion) {
                 that.drawRoute(that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion));
                 // FIXME: send moveData
-                testSend({move: 
-                    {
+                testSend({
+                    move: {
                         route: that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion), 
                         units: that.selectionSet[2][i].length
                     }
                 });
-                //console.log(that.selectionSet[2][i].length + ' units');
+                moved = true;
             }
+        }
+        
+        if (moved)
+            start();
+        else {
+            that.selectionSet.animate(
+                {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
+                Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
+                (function() {that.selectionSet.attr({opacity: 1})})
+            );
+            that.selectionSet[0].toFront();
         }
     };
     

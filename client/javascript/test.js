@@ -44,5 +44,5 @@ var moveUnits = function() {
     return move;
 };
 
-client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate(), listOfPlayersInGame: playerList, 'moveUnits': moveUnits()});
+client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate(), listOfPlayersInGame: playerList});
 //setInterval("client.onMessage({'moveUnits': moveUnits()})", 1000);
