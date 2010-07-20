@@ -225,8 +225,14 @@ Map.prototype.initUnitSelection = function() {
         for (var i = 0, ii = that.selectionSet[2].length; i < ii; i++) {
             if (that.selectionSet[2][i].regionID != that.hoverRegion) {
                 that.drawRoute(that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion));
-                
                 // FIXME: send moveData
+                testSend({move: 
+                    {
+                        route: that.getRoute(that.selectionSet[2][i].regionID, that.hoverRegion), 
+                        units: that.selectionSet[2][i].length
+                    }
+                });
+                //console.log(that.selectionSet[2][i].length + ' units');
             }
         }
     };
@@ -384,6 +390,20 @@ Map.prototype.createMove = function(departureID, destinationID, units, playerID,
 };
 
 var client = new UnitacsClient();
+
+function testSend(messageObject) {
+    if (messageObject.move) {
+        client.onMessage({
+            moveUnits: [{
+                departureID: messageObject.move.route[0], 
+                destinationID: messageObject.move.route[1], 
+                units: messageObject.move.units, 
+                playerID: CONST.MY_ID,
+                duration: 10000
+                }]
+        });
+    }
+};
 
 // http://andylangton.co.uk/articles/javascript/get-viewport-size-javascript/
 function getViewport() {
