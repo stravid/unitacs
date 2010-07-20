@@ -42,7 +42,6 @@ CONST.MAP.UNITCIRCLE_VECTOR = (
 
 // Raphael -----------------------------------------------
 
-// FIXME: implement setOwner and setUnits
 Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID) {
     var overlay = this.path(pathString).attr({opacity: 0});
     overlay.regionID = ID;
@@ -163,7 +162,16 @@ Map.prototype.build = function(regions) {
     this.moves = this.paper.set();
     
     for (var i = 0, ii = regions.length; i < ii; i++) {
-        this.regions.push(this.paper.region(regions[i].ID, regions[i].pathString, regions[i].center, regions[i].units, regions[i].regionType, regions[i].ownerID));
+        this.regions.push(
+            this.paper.region(
+                regions[i].ID, 
+                regions[i].pathString, 
+                regions[i].center, 
+                regions[i].units, 
+                regions[i].regionType, 
+                regions[i].ownerID
+            )
+        );
     }
     
     this.mapSet = this.paper.set(
@@ -180,30 +188,34 @@ Map.prototype.build = function(regions) {
 Map.prototype.initEvents = function(regions) {
     var that = this;
     this.mapSet.mousedown(function(event) {
-        //FIXME: mouse-coordinates correspond to window not paper
+        //FIXME: mouse-coordinates correspond to window not paper, offset needs to be determined
         that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
     });
     
-    this.initUnitSelection();
-};
-
-Map.prototype.hoverRegions = function() {
-    var that = this;
-    this.regionsToFront();
-    this.regions.hover(function(event) {
+    var hoverIn = function(event) {
         that.hoverRegion = this.regionID;
         that.regions[this.regionID].items[0].attr({'fill-opacity': 0.5});
-    }, function(event) {
+    },
+    hoverOut = function(event) {
         that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
-    });
+    },
+    mouseOut = function(event) {
+        that.hoverRegion = -1
+    };
     
-    this.regions.mouseout(function(event) {that.hoverRegion = -1});
-}
+    this.hoverRegions = function() {
+        this.regionsToFront();
+        this.regions.hover(hoverIn, hoverOut);
+        this.regions.mouseout(mouseOut);
+    }
 
-Map.prototype.unhoverRegions = function() {
-    this.regions.unhover();
-    this.regions.unmouseout();
-}
+    this.unhoverRegions = function() {
+        this.regions.unhover(hoverIn, hoverOut);
+        this.regions.unmouseout(mouseOut);
+    }
+    
+    this.initUnitSelection();
+};
 
 Map.prototype.initUnitSelection = function() {
     var that = this;
@@ -259,9 +271,12 @@ Map.prototype.initUnitSelection = function() {
     var start = function () {
         this.o = {x: that.mouse.x, y: that.mouse.y};
         
-        that.selectionSet.undrag();
+        // FIXME: line fails, do eventListeners of removed Objects have to be removed?, same at Map.resize()
+        // that.selectionSet.undrag(selectionMove, selectionStart, selectionUp);
         while (that.selectionSet.length > 0)
             that.selectionSet.pop().remove();
+        
+        that.selectionSet.push(that.paper.rect(0,0,0,0).attr({fill: '#fff', 'fill-opacity': 0}));
     },
     move = function (dx, dy) {
         var ox, oy;
@@ -334,7 +349,7 @@ Map.prototype.drawRoute = function(route) {
     this.paths.push(
         this.paper.path(pathString).attr({
             stroke: '#fff', 
-            'stroke-width': 3, 
+            'stroke-width': 2, 
             scale: (CONST.MAP.SCALE + ' ' + CONST.MAP.SCALE + ' ' + 0 + ' ' + 0)
         })
     );
@@ -381,7 +396,8 @@ Map.prototype.resize = function() {
         this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
         this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
         
-        this.selectionSet.undrag();
+        // FIXME: do eventListeners of removed Objects have to be removed?, same at Map.initUnitSelection.start()
+        // this.selectionSet.undrag();
         while (this.selectionSet.length > 0) {
             this.selectionSet.pop().remove();
         }
@@ -395,7 +411,6 @@ Map.prototype.createMove = function(departureID, destinationID, units, playerID,
     
     var translation = {x: (this.regions[destinationID].center.x - this.regions[departureID].center.x) * CONST.MAP.SCALE, 
                         y: (this.regions[destinationID].center.y - this.regions[departureID].center.y) * CONST.MAP.SCALE};
-    
     
     // FIXME move misses destination after resize
     this.moves.push(
