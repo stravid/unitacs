@@ -1,5 +1,6 @@
 // constants -----------------------------------------------
 
+// FIXME: better solution
 var CONST = {
     MAP: {
         SCALE: 1,
@@ -9,9 +10,14 @@ var CONST = {
         UNIT_SIZE: 5,
         UNIT_TO_CENTER: 20,
         UNITS_PER_REGION: 10,
-        TYPE_COLOR: ['#2D2B21', '#A69055', '#C9B086', '#FFB88C'],
-        STROKE_COLOR: '#141919',
-        OWNER_COLOR: ['#0cdbf8', '#05e200', '#f60', '#f65c7d', '#d92727', '#06c'],
+        // TYPE_COLOR: ['#2D2B21', '#A69055', '#C9B086', '#FFB88C'],
+        // STROKE_COLOR: '#141919',
+        TYPE_COLOR: ['#5E5A38', '#A69055', '#C9B086', '#E5C47C'],
+        STROKE_COLOR: '#3D3425',
+        // OWNER_COLOR: ['#0cdbf8', '#05e200', '#f60', '#f65c7d', '#d92727', '#06c'],
+        SELECTION_COLOR: '#D3D5DB',
+        FADE_COLOR: '#3D3E40',
+        OWNER_COLOR: ['#59BA32', '#F2DE49', '#8E8F94', '#125496', '#B82525', '#06c'],
         PLAYERS: {},
         LEFT: 10,
         TOP: 10,
@@ -19,6 +25,10 @@ var CONST = {
     },
     MY_ID: 0
 };
+
+// 3D3425 5E5A38 A69055 C9B086 E5C47C
+// D3D5DB 70BA52 F2DF55 B83E3E 2D6296 7D7E82
+// D3D5DB 59BA32 F2DE49 B82525 125496 8E8F94
 
 CONST.MAP.UNITCIRCLE_VECTOR = (
     function(number, distance){
@@ -107,8 +117,8 @@ Raphael.fn.arrow = function(origin, aim) {
     var arrowString = 'M' + aim.x + ' ' + (aim.y + 15) + 'l 5 10 -10 0 z v' + (length - 15);
     
     return this.path(arrowString).attr({
-        stroke: '#fff', 
-        fill: '#fff',
+        stroke: CONST.MAP.SELECTION_COLOR, 
+        fill: CONST.MAP.SELECTION_COLOR,
         'stroke-width': 2,
         rotation:
             Math.acos(
@@ -254,15 +264,19 @@ Map.prototype.initUnitSelection = function() {
     var that = this;
     this.rectIndex = 0;
     this.reselected = false;
+    
+    // FIXME: make selectionSet to own Object not Raphael.set
     this.selectionSet = this.paper.set();
     
     // FIXME: arrows appear not until movement
-    var selectionStart = function () {      
+    var selectionStart = function () { 
+        // console.log("selstart");     
         that.hoverRegions();
         that.reselected = false;
     },
     // FIXME: hover over a arrow causes hoverRegion to blink, atm solved throw distance to mousepointer
     selectionMove = function (dx, dy) {
+        // console.log("selmove");
         
         if (that.reselected)
             selectionStart();
@@ -299,11 +313,13 @@ Map.prototype.initUnitSelection = function() {
         }
         
         if (that.hoverRegion < 0)
-            arrowSet.attr({fill: '#777', stroke: '#777'});
+            arrowSet.attr({fill: CONST.MAP.FADE_COLOR, stroke: CONST.MAP.FADE_COLOR});
         
         that.selectionSet.push(arrowSet);
     },
     selectionUp = function () {
+        // console.log("selup");
+        
         that.unhoverRegions();
         
         if (that.selectionSet.length < 2)
@@ -319,7 +335,7 @@ Map.prototype.initUnitSelection = function() {
                 // FIXME: send moveData
                 testSend({
                     move: {
-                        route: that.getRoute(that.selectionSet[1][i].regionID, that.hoverRegion), 
+                        route: that.getRoute(that.selectionSet[1][i].regionID, that.hoverRegion),
                         units: that.selectionSet[1][i].length
                     }
                 });
@@ -329,9 +345,12 @@ Map.prototype.initUnitSelection = function() {
         
         if (moved)
             start();
+        else
+            that.selectionSet[0][that.rectIndex].toFront();
     };
     
     var start = function () {
+        // console.log("start");
         this.o = {x: that.mouse.x, y: that.mouse.y};
         that.rectIndex = 0;
         
@@ -339,7 +358,7 @@ Map.prototype.initUnitSelection = function() {
             that.selectionSet.pop().remove();
     },
     move = function (dx, dy) {
-        
+        // console.log("move");
         while (that.selectionSet.length > 0)
             that.selectionSet.pop().remove();
         
@@ -350,12 +369,12 @@ Map.prototype.initUnitSelection = function() {
         that.selectionSet.push(
             that.paper.set(
                 that.paper.rect(ox, oy, dx, dy).attr({fill: '#fff', opacity: 0}),
-                that.paper.rect(ox, oy, dx, dy).attr({stroke: '#ccc', 'stroke-width': 2})
+                that.paper.rect(ox, oy, dx, dy).attr({stroke: CONST.MAP.SELECTION_COLOR, 'stroke-width': 2})
             )
         );
     },
     up = function () {
-        
+        // console.log("up");
         if (that.selectionSet.length < 1)
             return;
             
@@ -390,7 +409,7 @@ Map.prototype.initUnitSelection = function() {
             }
         }
         if (unitSet.length > 0) {
-            that.selectionSet.push(unitSet.attr({fill: '#fff'}));
+            that.selectionSet.push(unitSet.attr({fill: CONST.MAP.SELECTION_COLOR}));
             that.selectionSet[0][that.rectIndex].drag(selectionMove, selectionStart, selectionUp);
             that.selectionSet[0][that.rectIndex].toFront();
         }
@@ -431,7 +450,7 @@ Map.prototype.drawRoute = function(route) {
     
     this.paths.push(
         this.paper.path(pathString).attr({
-            stroke: '#fff', 
+            stroke: CONST.MAP.SELECTION_COLOR, 
             'stroke-width': 2, 
             scale: (CONST.MAP.SCALE + ' ' + CONST.MAP.SCALE + ' ' + 0 + ' ' + 0)
         })
