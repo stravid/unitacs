@@ -231,14 +231,21 @@ Map.prototype.initEvents = function(regions) {
     this.hoverRegions = function() {
         this.mapSet[0].toFront();
         this.regionsToFront();
-        this.regions.hover(hoverIn, hoverOut);
-        this.regions.mouseout(mouseOut);
+        
+        //this.regions.hover(hoverIn, hoverOut);
+        //this.regions.mouseout(mouseOut);
     }
     
     this.unhoverRegions = function() {
-        that.regions.unhover(hoverIn, hoverOut);
-        that.regions.unmouseout(mouseOut);
+        that.mapSet[0].toFront();
+        
+        // FIXME: unitdrag while update causes crash with following lines
+        // that.regions.unhover(hoverIn, hoverOut);
+        // that.regions.unmouseout(mouseOut);
     }
+    
+    this.regions.hover(hoverIn, hoverOut);
+    this.regions.mouseout(mouseOut);
     
     this.initUnitSelection();
 };
@@ -246,14 +253,19 @@ Map.prototype.initEvents = function(regions) {
 Map.prototype.initUnitSelection = function() {
     var that = this;
     this.rectIndex = 0;
+    this.reselected = false;
     this.selectionSet = this.paper.set();
     
     // FIXME: arrows appear not until movement
     var selectionStart = function () {      
         that.hoverRegions();
+        that.reselected = false;
     },
     // FIXME: hover over a arrow causes hoverRegion to blink, atm solved throw distance to mousepointer
     selectionMove = function (dx, dy) {
+        
+        if (that.reselected)
+            selectionStart();
         
         if (that.selectionSet.length < 2)
             return;
@@ -319,7 +331,6 @@ Map.prototype.initUnitSelection = function() {
             start();
     };
     
-    // FIXME: handle region-updates
     var start = function () {
         this.o = {x: that.mouse.x, y: that.mouse.y};
         that.rectIndex = 0;
@@ -397,6 +408,7 @@ Map.prototype.initUnitSelection = function() {
             this.selectionSet[0][this.rectIndex].toBack();
             this.rectIndex = this.selectionSet[0].length;
             this.selectionSet[0].push(this.paper.rect(rect.x, rect.y, rect.width, rect.height).attr({fill: '#fff', opacity: 0}));
+            this.reselected = true;
         }
         
         if (this.selectionSet.length && this.selectionSet[0].length > 1)
