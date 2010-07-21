@@ -99,6 +99,27 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
     return unitCircle.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
 };
 
+Raphael.fn.arrow = function(origin, aim) {
+    
+    var vector1 = {x: origin.x - aim.x, y: origin.y - aim.y};
+    var length = Math.sqrt(vector1.x * vector1.x + vector1.y * vector1.y);
+    var vector2 = {x: 0, y: length};
+    var arrowString = 'M' + aim.x + ' ' + (aim.y + 15) + 'l 5 10 -10 0 z v' + (length - 15);
+    
+    return this.path(arrowString).attr({
+        stroke: '#fff', 
+        fill: '#fff',
+        'stroke-width': 2,
+        rotation:
+            Math.acos(
+                (vector1.x * vector2.x + vector1.y * vector2.y) /
+                (length * length)
+            ) * 180 / Math.PI  * (vector1.x > 0 ? -1 : 1) + ' ' +
+            aim.x  + ' ' +
+            aim.y
+    });
+};
+
 // UnitacsClient ----------------------------------------------
 
 function UnitacsClient() {
@@ -178,7 +199,7 @@ Map.prototype.build = function(regions) {
         this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0}).toBack(),
         this.regions,
         this.paths,
-        this.moves
+        this.moves //this.paper.arrow({x: this.width-10, y: this.height-10}, {x: 10, y: 10})
     );
     
     this.initEvents();
@@ -187,7 +208,7 @@ Map.prototype.build = function(regions) {
 
 Map.prototype.initEvents = function(regions) {
     var that = this;
-    this.mapSet.mousedown(function(event) {
+    this.mapSet.mousemove(function(event) {
         //FIXME: mouse-coordinates correspond to window not paper, offset needs to be determined
         that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
     });
@@ -204,6 +225,7 @@ Map.prototype.initEvents = function(regions) {
     };
     
     this.hoverRegions = function() {
+        this.mapSet[0].toFront();
         this.regionsToFront();
         this.regions.hover(hoverIn, hoverOut);
         this.regions.mouseout(mouseOut);
@@ -221,24 +243,51 @@ Map.prototype.initUnitSelection = function() {
     var that = this;
     this.selectionSet = this.paper.set();
     
-    var selectionStart = function () {
-        this.translation = {x: 0, y: 0};
-        that.selectionSet.attr({opacity: 0.5});
-        
+    // FIXME: arrows appear not until movement
+    var selectionStart = function () {        
         that.hoverRegions();
     },
+    // FIXME: hover over a arrow causes hoverRegion to blink, atm solved throw distance to mousepointer
     selectionMove = function (dx, dy) {
-        // FIXME: translation lags at too much units
-        dx -= this.translation.x;
-        dy -= this.translation.y;
         
-        that.selectionSet.translate(dx, dy);
+        if (that.selectionSet.length > 3)
+            that.selectionSet.pop().remove();
         
-        this.translation.x += dx;
-        this.translation.y += dy;
+        var arrowSet = that.paper.set();
+        
+        for (var i = 0, ii = that.selectionSet[2].length; i < ii; i++) {
+            var id = that.selectionSet[2][i].regionID;
+            var origin = that.regions[id].center;
+            origin = {x: origin.x * CONST.MAP.SCALE, y: origin.y * CONST.MAP.SCALE};
+            
+            // no snapping
+            var arrow = that.paper.arrow(origin, that.mouse);
+            
+            // snapping
+            // if (that.hoverRegion >= 0) {
+            //     var aim = that.regions[that.hoverRegion].center;
+            //     aim = {x: aim.x * CONST.MAP.SCALE, y: aim.y * CONST.MAP.SCALE};
+            //     var arrow = that.paper.arrow(origin, aim);
+            // }
+            // else 
+            //     continue;
+            
+            if (id == that.hoverRegion)
+                arrow.attr({opacity: 0});
+            
+            arrowSet.push(arrow);
+        }
+        
+        if (that.hoverRegion < 0)
+            arrowSet.attr({fill: '#777', stroke: '#777'});
+        
+        that.selectionSet.push(arrowSet);
     },
     selectionUp = function () {
         that.unhoverRegions();
+        
+        if (that.selectionSet.length > 3)
+            that.selectionSet.pop().remove();
         
         var moved = false;
         for (var i = 0, ii = that.selectionSet[2].length; i < ii; i++) {
@@ -257,14 +306,6 @@ Map.prototype.initUnitSelection = function() {
         
         if (moved)
             start();
-        else {
-            that.selectionSet.animate(
-                {translation: (-this.translation.x) + " " + (-this.translation.y)}, 
-                Math.sqrt(this.translation.x * this.translation.x + this.translation.y * this.translation.y),
-                (function() {that.selectionSet.attr({opacity: 1})})
-            );
-            that.selectionSet[0].toFront();
-        }
     };
     
     // FIXME: handle region-updates
