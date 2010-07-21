@@ -17,7 +17,7 @@ var playerList = [
 var mapUpdate = function() {
     var update = [];
     
-    for (var i = 0; i < 50; i++) {
+    for (var i = 0; i < 10; i++) {
         update.push({
             ID: rand(0, mapData.regions.length - 1), 
             units: rand(0, CONST.MAP.UNITS_PER_REGION), 
@@ -44,5 +44,10 @@ var moveUnits = function() {
     return move;
 };
 
-client.onMessage({'mapData': mapData, 'mapUpdate': mapUpdate(), listOfPlayersInGame: playerList});
+client.onMessage({'mapData': mapData, listOfPlayersInGame: playerList});
+setTimeout("client.onMessage({'mapUpdate': mapUpdate()})", 100);
+setTimeout("client.onMessage({'mapUpdate': mapUpdate()})", 5000);
+setTimeout("client.onMessage({'mapUpdate': mapUpdate()})", 10000);
+setTimeout("client.onMessage({'mapUpdate': mapUpdate()})", 15000);
+setTimeout("client.onMessage({'mapUpdate': mapUpdate()})", 20000);
 //setInterval("client.onMessage({'moveUnits': moveUnits()})", 1000);
