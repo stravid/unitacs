@@ -149,7 +149,8 @@ UnitacsClient.prototype.onMessage = function(messageObject) {
                 var update = messageObject.mapUpdate[i];
                 this.map.regions[update.ID].update(update.units, update.ownerID);
             }
-            this.map.reselect();
+            this.map.setSelectionStatus('empty');
+            // this.map.reselect();
         }
         
         if (messageObject.moveUnits) {
@@ -192,6 +193,7 @@ function Map(mapData) {
 
 Map.prototype.build = function(regions, matrix) {
     this.paper = Raphael('map', this.width, this.height);
+    this.background = this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0});
     this.regions = this.paper.set();
     this.paths = this.paper.set();
     this.moves = this.paper.set();
@@ -225,185 +227,123 @@ Map.prototype.build = function(regions, matrix) {
     this.paths.attr({stroke: CONST.MAP.FADE_COLOR, 'stroke-width': 2, opacity: 0.5});
     
     this.mapSet = this.paper.set(
-        this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0}).toBack(),
+        this.background,
         this.regions,
         this.paths,
         this.moves //this.paper.arrow({x: this.width-10, y: this.height-10}, {x: 10, y: 10})
     );
     
-    this.initEvents();
+    this.initUnitSelection();
     this.resize();
 };
 
-Map.prototype.initEvents = function(regions) {
+Map.prototype.setSelectionStatus = function(status) {
+    this.selectionStatus = status;
+    // console.log(status);
+    
+    var back = false,
+        select = false;
+    
+    switch (status) {
+        case 'empty':
+            if (this.selectionRectangle) {
+                this.selectionRectangle.remove();
+                this.selectionRectangle = 0;
+            }
+        
+        case 'rectangle':
+            while (this.selectedUnits.length > 0) {
+                this.selectedUnits.pop().remove();
+            }
+            back = true;
+        
+        case 'selected':
+            select = true;
+        
+        case 'dragging':
+            this.moveRoutes = new Array();
+        
+        case 'routing':
+            while (this.arrows.length > 0) {
+                this.arrows.pop().remove();
+            }
+            
+            while (this.paths.length > 0) {
+                this.paths.pop().remove();
+            }
+            break;
+        
+        default:
+            // console.log('error: false status parameter at Map.setSelectionStatus()');
+            break;
+    }
+    
+    if (back)
+        this.background.toFront();
+    else if (select) {
+        this.background.toFront();
+        this.selectionRectangle.toFront();
+    }
+    else {
+        this.background.toFront();
+        this.regionsToFront();
+    }
+};
+
+Map.prototype.initUnitSelection = function(regions) {
+    this.selectionRectangle = 0;
+    this.selectedUnits = new Array();
+    this.arrows = new Array();
+    this.moveRoutes = new Array();
+    
+    this.setSelectionStatus('empty');
+    
     var that = this;
-    this.mapSet.mousemove(function(event) {
-        //FIXME: mouse-coordinates correspond to window not paper, offset needs to be determined
-        that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
-    });
-    
-    // this.mapSet.click(function(event) {
-    //     console.log(event);
-    // });
-    
     var hoverIn = function(event) {
         that.hoverRegion = this.regionID;
         that.regions[this.regionID].items[0].attr({'fill-opacity': 0.5});
     },
     hoverOut = function(event) {
         that.regions[this.regionID].items[0].attr({'fill-opacity': 1});
-    },
-    mouseOut = function(event) {
+    };
+    this.regions.hover(hoverIn, hoverOut);
+    
+    var mouseOut = function(event) {
         that.hoverRegion = -1
     };
-    
-    this.hoverRegions = function() {
-        this.mapSet[0].toFront();
-        this.regionsToFront();
-        
-        //this.regions.hover(hoverIn, hoverOut);
-        //this.regions.mouseout(mouseOut);
-    }
-    
-    this.unhoverRegions = function() {
-        that.mapSet[0].toFront();
-        
-        // FIXME: unitdrag while update causes crash with following lines
-        // that.regions.unhover(hoverIn, hoverOut);
-        // that.regions.unmouseout(mouseOut);
-    }
-    
-    this.regions.hover(hoverIn, hoverOut);
     this.regions.mouseout(mouseOut);
-    this.unhoverRegions();
     
-    this.initUnitSelection();
-};
-
-Map.prototype.initUnitSelection = function() {
-    var that = this;
-    this.rectIndex = 0;
-    this.reselected = false;
-    
-    // FIXME: make selectionSet to own Object not Raphael.set
-    this.selectionSet = this.paper.set();
-    
-    // FIXME: arrows appear not until movement
-    var selectionStart = function () { 
-        // console.log("selstart");     
-        that.hoverRegions();
-        that.reselected = false;
-    },
-    // FIXME: hover over a arrow causes hoverRegion to blink, atm solved throw distance to mousepointer
-    selectionMove = function (dx, dy) {
-        // console.log("selmove");
+    // empty
+    var backgroundStart = function() {
+        // console.log("back start");
         
-        if (that.reselected)
-            selectionStart();
+        if (that.selectionStatus != 'empty')
+            that.setSelectionStatus('empty');
         
-        if (that.selectionSet.length < 2)
-            return;
-        
-        if (that.selectionSet.length > 2)
-            that.selectionSet.pop().remove();
-        
-        var arrowSet = that.paper.set();
-        
-        for (var i = 0, ii = that.selectionSet[1].length; i < ii; i++) {
-            var id = that.selectionSet[1][i].regionID;
-            var origin = that.regions[id].center;
-            origin = {x: origin.x * CONST.MAP.SCALE, y: origin.y * CONST.MAP.SCALE};
-            
-            // no snapping
-            var arrow = that.paper.arrow(origin, that.mouse);
-            
-            // snapping
-            // if (that.hoverRegion >= 0) {
-            //     var aim = that.regions[that.hoverRegion].center;
-            //     aim = {x: aim.x * CONST.MAP.SCALE, y: aim.y * CONST.MAP.SCALE};
-            //     var arrow = that.paper.arrow(origin, aim);
-            // }
-            // else 
-            //     continue;
-            
-            if (id == that.hoverRegion)
-                arrow.attr({opacity: 0});
-            
-            arrowSet.push(arrow);
-        }
-        
-        if (that.hoverRegion < 0)
-            arrowSet.attr({fill: CONST.MAP.FADE_COLOR, stroke: CONST.MAP.FADE_COLOR});
-        
-        that.selectionSet.push(arrowSet);
-    },
-    selectionUp = function () {
-        // console.log("selup");
-        
-        that.unhoverRegions();
-        
-        if (that.selectionSet.length < 2)
-            return;
-        
-        if (that.selectionSet.length > 2)
-            that.selectionSet.pop().remove();
-        
-        var moved = false;
-        for (var i = 0, ii = that.selectionSet[1].length; i < ii; i++) {
-            if (that.hoverRegion >= 0 && that.selectionSet[1][i].regionID != that.hoverRegion) {
-                that.drawRoute(that.getRoute(that.selectionSet[1][i].regionID, that.hoverRegion));
-                // FIXME: send moveData
-                testSend({
-                    move: {
-                        route: that.getRoute(that.selectionSet[1][i].regionID, that.hoverRegion),
-                        units: that.selectionSet[1][i].length
-                    }
-                });
-                moved = true;
-            }
-        }
-        
-        if (moved)
-            start();
-        else
-            that.selectionSet[0][that.rectIndex].toFront();
-    };
-    
-    var start = function() {
-        // console.log("start");
         this.o = {x: that.mouse.x, y: that.mouse.y};
-        that.rectIndex = 0;
-        
-        while (that.selectionSet.length > 0)
-            that.selectionSet.pop().remove();
     },
-    move = function(dx, dy) {
-        // console.log("move");
-        while (that.selectionSet.length > 0)
-            that.selectionSet.pop().remove();
+    backgroundMove = function(dx, dy) {
+        // console.log("back move");
+        
+        if (that.selectionRectangle)
+            that.selectionRectangle.remove();
         
         var ox, oy;
         (dx >= 0) ? (ox = this.o.x) : (ox = this.o.x + dx, dx *= -1);
         (dy >= 0) ? (oy = this.o.y) : (oy = this.o.y + dy, dy *= -1);
         
-        that.selectionSet.push(
-            that.paper.set(
-                that.paper.rect(ox, oy, dx, dy).attr({fill: '#fff', opacity: 0}),
-                that.paper.rect(ox, oy, dx, dy).attr({stroke: CONST.MAP.SELECTION_COLOR, 'stroke-width': 2})
-            )
-        );
+        that.selectionRectangle = that.paper.rect(ox, oy, dx, dy).attr({fill: '#fff', 'fill-opacity': 0, stroke: CONST.MAP.SELECTION_COLOR, 'stroke-width': 2});
     },
-    up = function() {
-        // console.log("up");
-        if (that.selectionSet.length < 1)
+    backgroundUp = function() {
+        // console.log("back up");
+        
+        if (!that.selectionRectangle) {
+            that.setSelectionStatus('empty');
             return;
-            
-        while (that.selectionSet.length > 1) {
-            that.selectionSet.pop().remove();
         }
         
-        var rect = that.selectionSet[0][that.rectIndex].getBBox();
-        var unitSet = that.paper.set();
+        that.setSelectionStatus('rectangle');
+        var rect = that.selectionRectangle.getBBox();
         
         for (var i = 0, ii = that.regions.length; i < ii; i++) {
             var region = that.regions[i];
@@ -422,37 +362,170 @@ Map.prototype.initUnitSelection = function() {
                 
                 if (regionUnitSet.length > 0) {
                     regionUnitSet.regionID = region.regionID;
-                    unitSet.push(regionUnitSet);
+                    that.selectedUnits.push(regionUnitSet.attr({fill: CONST.MAP.SELECTION_COLOR}));
                 }
                 else 
                     regionUnitSet.remove();
             }
         }
-        if (unitSet.length > 0) {
-            that.selectionSet.push(unitSet.attr({fill: CONST.MAP.SELECTION_COLOR}));
-            that.selectionSet[0][that.rectIndex].drag(selectionMove, selectionStart, selectionUp);
-            that.selectionSet[0][that.rectIndex].toFront();
-        }
-        else {
-            unitSet.remove();
-            that.selectionSet[0][that.rectIndex].toBack();
+        
+        if (that.selectedUnits.length > 0) {
+            that.selectionRectangle.drag(selectionMove, selectionStart, selectionUp);
+            that.setSelectionStatus('selected');
         }
     };
-    this.mapSet.drag(move, start, up);
+    this.background.drag(backgroundMove, backgroundStart, backgroundUp);
     
-    this.reselect = function() {
+    // selected
+    // FIXME: arrows appear not until movement
+    var selectionStart = function () {
+        // console.log("select start");
         
-        if (this.selectionSet.length > 1) {
-            var rect = this.selectionSet[0][0].getBBox();
-            this.selectionSet[0][this.rectIndex].toBack();
-            this.rectIndex = this.selectionSet[0].length;
-            this.selectionSet[0].push(this.paper.rect(rect.x, rect.y, rect.width, rect.height).attr({fill: '#fff', opacity: 0}));
-            this.reselected = true;
+        if (that.selectionStatus != 'dragging')
+            that.setSelectionStatus('dragging');
+    },
+    // FIXME: hover over a arrow causes hoverRegion to blink, atm solved throw distance to mousepointer
+    selectionMove = function (dx, dy) {
+        // console.log("select move");
+        
+        if (that.selectedUnits.length < 1)
+            return;
+        
+        if (that.selectionStatus != 'dragging')
+            that.setSelectionStatus('dragging');
+        
+        while (that.arrows.length > 0) {
+            that.arrows.pop().remove();
         }
         
-        if (this.selectionSet.length && this.selectionSet[0].length > 1)
-            up();
+        for (var i = 0, ii = that.selectedUnits.length; i < ii; i++) {
+            var id = that.selectedUnits[i].regionID;
+            var origin = that.regions[id].center;
+            origin = {x: origin.x * CONST.MAP.SCALE, y: origin.y * CONST.MAP.SCALE};
+            
+            var arrow = that.paper.arrow(origin, that.mouse);
+            
+            if (id == that.hoverRegion)
+                arrow.attr({opacity: 0});
+            
+            if (that.hoverRegion < 0)
+                arrow.attr({fill: CONST.MAP.FADE_COLOR, stroke: CONST.MAP.FADE_COLOR});
+            
+            that.arrows.push(arrow);
+        }
+    },
+    selectionUp = function () {
+        // console.log("select up");
+        
+        if (that.selectedUnits.length < 1) {
+            that.setSelectionStatus('rectangle');
+            return;
+        }
+        
+        if (that.selectionStatus != 'dragging')
+            that.setSelectionStatus('dragging');
+        
+        var routing = false;
+        for (var i = 0, ii = that.selectedUnits.length; i < ii; i++) {
+            if (that.hoverRegion >= 0) {
+                if (that.selectedUnits[i].regionID == that.hoverRegion) {
+                    that.moveRoutes.push([regionID]);
+                }
+                else {
+                    var route = that.getRoute(that.selectedUnits[i].regionID, that.hoverRegion)
+                    that.moveRoutes.push(route);
+                    routing = true;
+                }
+            }
+        }
+        
+        if (routing) {
+            that.setSelectionStatus('routing');
+            for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
+                that.drawRoute(that.moveRoutes[i]);
+            }
+        }
+        else
+            that.setSelectionStatus('selected');
     };
+    
+    // routing
+    this.mapSet.mousemove(function(event) {
+        //FIXME: mouse-coordinates correspond to window not paper, offset needs to be determined
+        that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
+        
+        if (that.selectionStatus == 'routing') {
+            if (that.arrows.length)
+                that.arrows.pop().remove();
+            
+            var id = that.moveRoutes[0][that.moveRoutes[0].length-1];
+            var origin = that.regions[id].center;
+            origin = {x: origin.x * CONST.MAP.SCALE, y: origin.y * CONST.MAP.SCALE};
+            
+            var arrow = that.paper.arrow(origin, that.mouse);
+            
+            if (id == that.hoverRegion)
+                arrow.attr({opacity: 0});
+            else if (that.hoverRegion < 0)
+                arrow.attr({fill: CONST.MAP.FADE_COLOR, stroke: CONST.MAP.FADE_COLOR});
+            
+            that.arrows.push(arrow);
+        }
+    });
+    
+    // FIXME: click on outside is interpreted as backgroundStart()-drag
+    this.regions.click(function(event) {
+        if (that.selectionStatus == 'routing' && that.hoverRegion >= 0) {
+            if (that.hoverRegion == that.moveRoutes[0][that.moveRoutes[0].length-1]) {
+                for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
+                    if (that.moveRoutes[i].length > 1) {
+                        // FIXME: send moveData
+                        testSend({
+                            move: {
+                                route: that.moveRoutes[i],
+                                units: that.selectedUnits[i].length
+                            }
+                        });
+                    }
+                }
+                that.setSelectionStatus('empty');
+            }
+            else {
+                for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
+                    var index = that.moveRoutes[i].indexOf(that.hoverRegion);
+                    
+                    if (index != -1) {
+                        that.moveRoutes[i] = that.moveRoutes[i].slice(0, index+1);
+                        rerouting = true;
+                    }
+                    else {
+                        var node = that.moveRoutes[i].pop();
+                        that.moveRoutes[i] = that.moveRoutes[i].concat(that.getRoute(node, that.hoverRegion));
+                        rerouting = true;
+                    }
+                }
+                
+                that.setSelectionStatus('routing');
+                for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
+                    that.drawRoute(that.moveRoutes[i]);
+                }
+            }
+        }
+    });
+    
+    // this.reselect = function() {
+    //     
+    //     if (this.selectionSet.length > 1) {
+    //         var rect = this.selectionSet[0][0].getBBox();
+    //         this.selectionSet[0][this.rectIndex].toBack();
+    //         this.rectIndex = this.selectionSet[0].length;
+    //         this.selectionSet[0].push(this.paper.rect(rect.x, rect.y, rect.width, rect.height).attr({fill: '#fff', opacity: 0}));
+    //         this.reselected = true;
+    //     }
+    //     
+    //     if (this.selectionSet.length && this.selectionSet[0].length > 1)
+    //         up();
+    // };
 };
 
 Map.prototype.regionsToFront = function() {
@@ -518,11 +591,7 @@ Map.prototype.resize = function() {
         this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
         this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
         
-        // FIXME: do eventListeners of removed Objects have to be removed?, same at Map.initUnitSelection.start()
-        // this.selectionSet.undrag();
-        while (this.selectionSet.length > 0) {
-            this.selectionSet.pop().remove();
-        }
+        this.setSelectionStatus('empty');
     }
 };
 
