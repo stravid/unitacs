@@ -6,7 +6,7 @@ var CONST = {
         SCALE: 1,
         VIEWPORT_WIDTH_VARIANCE: 20,
         VIEWPORT_HEIGHT_VARIANCE: 30,
-        CENTER_SIZE: 5,
+        CENTER_SIZE: 5, // 30
         UNIT_SIZE: 5,
         UNIT_TO_CENTER: 20,
         UNITS_PER_REGION: 10,
@@ -57,7 +57,7 @@ Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID)
     overlay.regionID = ID;
     
     var region = this.set(
-        this.path(pathString),
+        this.path(pathString), //.attr({opacity: 0}),
         this.circle(center.x, center.y, CONST.MAP.CENTER_SIZE),
         overlay
     ).attr({
@@ -182,7 +182,7 @@ function Map(mapData) {
         this.routes[i] = new Array();
     }
     
-    this.build(mapData.regions);
+    this.build(mapData.regions, mapData.adjacencyMatrix);
     
     var that = this;
     window.onresize = function() {
@@ -190,7 +190,7 @@ function Map(mapData) {
     };
 };
 
-Map.prototype.build = function(regions) {
+Map.prototype.build = function(regions, matrix) {
     this.paper = Raphael('map', this.width, this.height);
     this.regions = this.paper.set();
     this.paths = this.paper.set();
@@ -209,6 +209,21 @@ Map.prototype.build = function(regions) {
         );
     }
     
+    for (var i = 0, ii = regions.length; i < ii; i++) {
+        for (var j = i; j < ii; j++) {
+            if (matrix[i][j] > 0)
+                this.paths.push(
+                    this.paper.path(
+                        'M' + regions[i].center.x + 
+                        ' ' + regions[i].center.y + 
+                        'L' + regions[j].center.x + 
+                        ' ' + regions[j].center.y
+                    )
+                );
+        }
+    }
+    this.paths.attr({stroke: CONST.MAP.FADE_COLOR, 'stroke-width': 2, opacity: 0.5});
+    
     this.mapSet = this.paper.set(
         this.paper.rect(0, 0, this.width, this.height).attr({fill: '#fff', opacity: 0}).toBack(),
         this.regions,
@@ -226,6 +241,10 @@ Map.prototype.initEvents = function(regions) {
         //FIXME: mouse-coordinates correspond to window not paper, offset needs to be determined
         that.mouse = {x: event.clientX - CONST.MAP.LEFT, y: event.clientY - CONST.MAP.TOP};
     });
+    
+    // this.mapSet.click(function(event) {
+    //     console.log(event);
+    // });
     
     var hoverIn = function(event) {
         that.hoverRegion = this.regionID;
@@ -256,6 +275,7 @@ Map.prototype.initEvents = function(regions) {
     
     this.regions.hover(hoverIn, hoverOut);
     this.regions.mouseout(mouseOut);
+    this.unhoverRegions();
     
     this.initUnitSelection();
 };
@@ -349,7 +369,7 @@ Map.prototype.initUnitSelection = function() {
             that.selectionSet[0][that.rectIndex].toFront();
     };
     
-    var start = function () {
+    var start = function() {
         // console.log("start");
         this.o = {x: that.mouse.x, y: that.mouse.y};
         that.rectIndex = 0;
@@ -357,7 +377,7 @@ Map.prototype.initUnitSelection = function() {
         while (that.selectionSet.length > 0)
             that.selectionSet.pop().remove();
     },
-    move = function (dx, dy) {
+    move = function(dx, dy) {
         // console.log("move");
         while (that.selectionSet.length > 0)
             that.selectionSet.pop().remove();
@@ -373,7 +393,7 @@ Map.prototype.initUnitSelection = function() {
             )
         );
     },
-    up = function () {
+    up = function() {
         // console.log("up");
         if (that.selectionSet.length < 1)
             return;
@@ -442,10 +462,10 @@ Map.prototype.regionsToFront = function() {
 };
 
 Map.prototype.drawRoute = function(route) {
-    var pathString = 'M ' + this.regions[route[0]].center.x + ' ' + this.regions[route[0]].center.y;
+    var pathString = 'M ' + this.regions[route[0]].center.x + ' ' + this.regions[route[0]].center.y + 'L';
     
     for (var i = 1, ii = route.length; i < ii; i++) {
-        pathString += 'L ' + this.regions[route[i]].center.x + ' ' + this.regions[route[i]].center.y;
+        pathString += ' ' + this.regions[route[i]].center.x + ' ' + this.regions[route[i]].center.y;
     }
     
     this.paths.push(
