@@ -10,6 +10,7 @@ var CONST = {
         UNIT_SIZE: 5,
         UNIT_TO_CENTER: 20,
         UNITS_PER_REGION: 10,
+        CHECKPOINT_SIZE: 10,
         // TYPE_COLOR: ['#2D2B21', '#A69055', '#C9B086', '#FFB88C'],
         // STROKE_COLOR: '#141919',
         TYPE_COLOR: ['#5E5A38', '#A69055', '#C9B086', '#E5C47C'],
@@ -149,8 +150,7 @@ UnitacsClient.prototype.onMessage = function(messageObject) {
                 var update = messageObject.mapUpdate[i];
                 this.map.regions[update.ID].update(update.units, update.ownerID);
             }
-            this.map.setSelectionStatus('empty');
-            // this.map.reselect();
+            this.map.reselect();
         }
         
         if (messageObject.moveUnits) {
@@ -262,6 +262,8 @@ Map.prototype.setSelectionStatus = function(status) {
         
         case 'dragging':
             this.moveRoutes = new Array();
+            this.checkPoints = new Array();
+            this.routingPath = new Array();
         
         case 'routing':
             while (this.arrows.length > 0) {
@@ -274,7 +276,7 @@ Map.prototype.setSelectionStatus = function(status) {
             break;
         
         default:
-            // console.log('error: false status parameter at Map.setSelectionStatus()');
+            alert('error: false status parameter at Map.setSelectionStatus()');
             break;
     }
     
@@ -285,6 +287,18 @@ Map.prototype.setSelectionStatus = function(status) {
         this.selectionRectangle.toFront();
     }
     else {
+        if (this.moveRoutes.length) {
+            for (var i = 0, ii = this.moveRoutes.length; i < ii; i++) {
+                if (this.moveRoutes[i].length > 1)
+                    this.drawRoute(this.moveRoutes[i]);
+            }
+            
+            if (this.routingPath.length > 1)
+                this.drawRoute(this.routingPath);
+                
+            this.drawCheckPoints();
+        }
+        
         this.background.toFront();
         this.regionsToFront();
     }
@@ -293,8 +307,10 @@ Map.prototype.setSelectionStatus = function(status) {
 Map.prototype.initUnitSelection = function(regions) {
     this.selectionRectangle = 0;
     this.selectedUnits = new Array();
-    this.arrows = new Array();
     this.moveRoutes = new Array();
+    this.arrows = new Array();
+    this.checkPoints = new Array();
+    this.routingPath = new Array();
     
     this.setSelectionStatus('empty');
     
@@ -341,8 +357,13 @@ Map.prototype.initUnitSelection = function(regions) {
             that.setSelectionStatus('empty');
             return;
         }
+        else if (that.selectionStatus == 'empty')
+            that.setSelectionStatus('rectangle');
+            
+        while (that.selectedUnits.length > 0) {
+            that.selectedUnits.pop().remove();
+        }
         
-        that.setSelectionStatus('rectangle');
         var rect = that.selectionRectangle.getBBox();
         
         for (var i = 0, ii = that.regions.length; i < ii; i++) {
@@ -350,29 +371,31 @@ Map.prototype.initUnitSelection = function(regions) {
             
             // FIXME: need my ID
             if (region.ownerID == CONST.MY_ID && region.units > 0) {
-                var regionUnitSet = that.paper.set();
+                var regionUnits = that.paper.set();
                 
                 for (var j = 0, jj = region[3].length; j < jj; j++) {
                     var unit = region[3][j];
                     
                     if (unit.attr('cx') > rect.x && unit.attr('cx') < rect.x + rect.width && 
                         unit.attr('cy') > rect.y && unit.attr('cy') < rect.y + rect.height)
-                            regionUnitSet.push(unit.clone());
+                            regionUnits.push(unit.clone());
                 }
                 
-                if (regionUnitSet.length > 0) {
-                    regionUnitSet.regionID = region.regionID;
-                    that.selectedUnits.push(regionUnitSet.attr({fill: CONST.MAP.SELECTION_COLOR}));
+                if (regionUnits.length > 0) {
+                    regionUnits.regionID = region.regionID;
+                    that.selectedUnits.push(regionUnits.attr({fill: CONST.MAP.SELECTION_COLOR}));
                 }
-                else 
-                    regionUnitSet.remove();
+                else
+                    regionUnits.remove();
             }
         }
         
-        if (that.selectedUnits.length > 0) {
+        if (that.selectedUnits.length > 0 && that.selectionStatus == 'rectangle') {
             that.selectionRectangle.drag(selectionMove, selectionStart, selectionUp);
             that.setSelectionStatus('selected');
         }
+        else if (that.selectedUnits.length < 1)
+            that.setSelectionStatus('rectangle');
     };
     this.background.drag(backgroundMove, backgroundStart, backgroundUp);
     
@@ -428,22 +451,19 @@ Map.prototype.initUnitSelection = function(regions) {
         var routing = false;
         for (var i = 0, ii = that.selectedUnits.length; i < ii; i++) {
             if (that.hoverRegion >= 0) {
-                if (that.selectedUnits[i].regionID == that.hoverRegion) {
-                    that.moveRoutes.push([regionID]);
-                }
+                if (that.selectedUnits[i].regionID == that.hoverRegion)
+                    that.moveRoutes.push([that.hoverRegion]);
                 else {
-                    var route = that.getRoute(that.selectedUnits[i].regionID, that.hoverRegion)
-                    that.moveRoutes.push(route);
+                    that.moveRoutes.push(that.getRoute(that.selectedUnits[i].regionID, that.hoverRegion));
                     routing = true;
                 }
             }
         }
         
         if (routing) {
+            that.checkPoints.push(that.hoverRegion);
+            that.routingPath.push(that.hoverRegion);
             that.setSelectionStatus('routing');
-            for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
-                that.drawRoute(that.moveRoutes[i]);
-            }
         }
         else
             that.setSelectionStatus('selected');
@@ -458,7 +478,7 @@ Map.prototype.initUnitSelection = function(regions) {
             if (that.arrows.length)
                 that.arrows.pop().remove();
             
-            var id = that.moveRoutes[0][that.moveRoutes[0].length-1];
+            var id = that.checkPoints[that.checkPoints.length-1];
             var origin = that.regions[id].center;
             origin = {x: origin.x * CONST.MAP.SCALE, y: origin.y * CONST.MAP.SCALE};
             
@@ -473,65 +493,162 @@ Map.prototype.initUnitSelection = function(regions) {
         }
     });
     
+    // FIXME: subpress contextmenu
+    this.mapSet.mousedown(function(event) {
+        if (event.button == 2)
+            that.setSelectionStatus('empty');
+    });
+    
     // FIXME: click on outside is interpreted as backgroundStart()-drag
     this.regions.click(function(event) {
         if (that.selectionStatus == 'routing' && that.hoverRegion >= 0) {
-            if (that.hoverRegion == that.moveRoutes[0][that.moveRoutes[0].length-1]) {
-                for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
-                    if (that.moveRoutes[i].length > 1) {
-                        // FIXME: send moveData
-                        testSend({
-                            move: {
-                                route: that.moveRoutes[i],
-                                units: that.selectedUnits[i].length
-                            }
-                        });
-                    }
-                }
+            
+            if (that.selectedUnits.length != that.moveRoutes.length) {
+                alert("error: regions.click: unequal number of selectedUnits and moveRoutes");
+                return;
+            }
+            
+            if (that.hoverRegion == that.checkPoints[that.checkPoints.length-1]) {
+                that.startMoves();
                 that.setSelectionStatus('empty');
             }
             else {
-                for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
-                    var index = that.moveRoutes[i].indexOf(that.hoverRegion);
-                    
-                    if (index != -1) {
-                        that.moveRoutes[i] = that.moveRoutes[i].slice(0, index+1);
-                        rerouting = true;
-                    }
-                    else {
-                        var node = that.moveRoutes[i].pop();
-                        that.moveRoutes[i] = that.moveRoutes[i].concat(that.getRoute(node, that.hoverRegion));
-                        rerouting = true;
-                    }
+                var index = that.checkPoints.indexOf(that.hoverRegion);
+                if (index != -1) {
+                    that.changeCheckPoint(index);
+                    that.setSelectionStatus('routing');
+                    return;
                 }
                 
-                that.setSelectionStatus('routing');
-                for (var i = 0, ii = that.moveRoutes.length; i < ii; i++) {
-                    that.drawRoute(that.moveRoutes[i]);
+                index = that.routingPath.indexOf(that.hoverRegion);
+                if (index != -1) {
+                    that.changePath(index);
+                    that.setSelectionStatus('routing');
+                    return;
                 }
+                
+                if (that.checkMoveRoutes()) {
+                    selectionUp();
+                    return;
+                }
+                
+                var node = that.routingPath.pop();
+                that.routingPath = that.routingPath.concat(that.getRoute(node, that.hoverRegion));
+                that.checkPoints.push(that.hoverRegion);
+                
+                that.setSelectionStatus('routing');
             }
         }
     });
     
-    // this.reselect = function() {
-    //     
-    //     if (this.selectionSet.length > 1) {
-    //         var rect = this.selectionSet[0][0].getBBox();
-    //         this.selectionSet[0][this.rectIndex].toBack();
-    //         this.rectIndex = this.selectionSet[0].length;
-    //         this.selectionSet[0].push(this.paper.rect(rect.x, rect.y, rect.width, rect.height).attr({fill: '#fff', opacity: 0}));
-    //         this.reselected = true;
-    //     }
-    //     
-    //     if (this.selectionSet.length && this.selectionSet[0].length > 1)
-    //         up();
-    // };
+    this.reselect = function() {
+        
+        if (this.selectionStatus != 'empty')
+            backgroundUp();
+        
+        if (this.selectionStatus == 'routing') {
+            var savedCheckPoints = this.checkPoints;
+            this.hoverRegion = this.checkPoints[0];
+            selectionUp();
+            
+            for (var i = 1, ii = savedCheckPoints.length; i < ii; i++) {
+                var node = this.routingPath.pop();
+                this.routingPath = this.routingPath.concat(this.getRoute(node, savedCheckPoints[i]));
+            }
+            this.checkPoints = savedCheckPoints;
+        }
+        this.setSelectionStatus(this.selectionStatus);
+    };
 };
 
 Map.prototype.regionsToFront = function() {
     for (var i = 0, ii = this.regions.length; i < ii; i++) {
         this.regions[i][CONST.MAP.REGION_OVERLAY].toFront();
     }
+};
+
+Map.prototype.startMoves = function() {
+    this.routingPath.shift();
+    
+    for (var i = 0, ii = this.moveRoutes.length; i < ii; i++) {
+        var route = this.moveRoutes[i].concat(this.routingPath);
+        if (route.length > 1) {
+            // FIXME: send moveData
+            testSend({move: {
+                route: route,
+                units: this.selectedUnits[i].length
+            }});
+        }
+    }
+};
+
+Map.prototype.changeCheckPoint = function(index) {
+    if (index == 0) {
+        this.checkPoints.shift();
+        var first = this.checkPoints[0];
+        
+        for (var i = 0, ii = this.moveRoutes.length; i < ii; i++) {
+            if (this.selectedUnits[i].regionID == first)
+                this.moveRoutes[i] = [first];
+            else
+                this.moveRoutes[i] = this.getRoute(this.selectedUnits[i].regionID, first);
+        }
+        
+        index = this.routingPath.indexOf(first);
+        this.routingPath = this.routingPath.slice(index);
+    }
+    else {
+        this.checkPoints.splice(index, 1);
+        var front = this.routingPath.indexOf(this.checkPoints[index-1]) + 1;
+        var back = this.routingPath.indexOf(this.checkPoints[index]);
+        
+        var route = this.getRoute(this.checkPoints[index-1], this.checkPoints[index]);
+        route.shift(); route.pop();
+        
+        if (route.length)
+            this.routingPath = this.routingPath.slice(0, front).concat(route, this.routingPath.slice(back));
+        else
+            this.routingPath.splice(front, back-front);
+    }
+};
+
+Map.prototype.changePath = function(index) {
+    this.routingPath = this.routingPath.slice(0, index+1);
+    
+    var node = this.checkPoints.pop();
+    while (this.routingPath.indexOf(node) == -1) {
+        node = this.checkPoints.pop();
+    }
+    
+    this.checkPoints.push(node);
+    this.checkPoints.push(this.hoverRegion);
+};
+
+Map.prototype.checkMoveRoutes = function() {
+    for (var i = 0, ii = this.moveRoutes.length; i < ii; i++) {
+        for (var j = 0, jj = this.moveRoutes[i].length - 1; j < jj; j++) {
+            if (this.hoverRegion == this.moveRoutes[i][j])
+                return true;
+        }
+    }
+    return false;
+};
+
+Map.prototype.drawCheckPoints = function() {
+    var points = this.paper.set();
+    
+    for (var i = 0, ii = this.checkPoints.length; i < ii; i++) {
+        var c = this.regions[this.checkPoints[i]].center;
+        points.push(this.paper.circle(c.x, c.y, CONST.MAP.CHECKPOINT_SIZE));
+    }
+    
+    this.paths.push(
+        points.attr({
+            stroke: CONST.MAP.SELECTION_COLOR, 
+            'stroke-width': 2, 
+            scale: (CONST.MAP.SCALE + ' ' + CONST.MAP.SCALE + ' ' + 0 + ' ' + 0)
+        })
+    );
 };
 
 Map.prototype.drawRoute = function(route) {
@@ -591,7 +708,9 @@ Map.prototype.resize = function() {
         this.mapSet.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
         this.paper.setSize(this.width * CONST.MAP.SCALE, this.height * CONST.MAP.SCALE);
         
-        this.setSelectionStatus('empty');
+        if (this.selectionStatus != 'empty') {
+            this.reselect();
+        }
     }
 };
 
