@@ -517,9 +517,9 @@ Map.prototype.initUnitSelection = function(regions) {
                 if (index != -1) {
                     that.changeCheckPoint(index);
                     that.setSelectionStatus('routing');
-                    console.log('checkpoint');
-                    console.log(that.checkPoints);
-                    console.log(that.routingPath);
+                    // console.log('checkpoint');
+                    // console.log(that.checkPoints);
+                    // console.log(that.routingPath);
                     return;
                 }
                 
@@ -527,17 +527,17 @@ Map.prototype.initUnitSelection = function(regions) {
                 if (index != -1) {
                     that.changePath(index);
                     that.setSelectionStatus('routing');
-                    console.log('path');
-                    console.log(that.checkPoints);
-                    console.log(that.routingPath);
+                    // console.log('path');
+                    // console.log(that.checkPoints);
+                    // console.log(that.routingPath);
                     return;
                 }
                 
                 if (that.checkMoveRoutes()) {
                     selectionUp();
-                    console.log('new start');
-                    console.log(that.checkPoints);
-                    console.log(that.routingPath);
+                    // console.log('new start');
+                    // console.log(that.checkPoints);
+                    // console.log(that.routingPath);
                     return;
                 }
                 
@@ -547,11 +547,11 @@ Map.prototype.initUnitSelection = function(regions) {
                 
                 that.setSelectionStatus('routing');
                 
-                console.log('new point');
-                console.log([node, that.hoverRegion]);
-                console.log(that.getRoute(node, that.hoverRegion));
-                console.log(that.checkPoints);
-                console.log(that.routingPath);
+                // console.log('new point');
+                // console.log([node, that.hoverRegion]);
+                // console.log(that.getRoute(node, that.hoverRegion));
+                // console.log(that.checkPoints);
+                // console.log(that.routingPath);
             }
         }
     });
@@ -821,10 +821,8 @@ function Dijkstra(adjacencyMatrix, source) {
             
             u = this.Q.shift();
             
-            if (this.distance[u] == Infinity) {
-                console.log('error: dijkstra: node without connection');
+            if (this.distance[u] == Infinity)
                 break;
-            }
             
             for (var i = 0; i < this.matrix[u].length; i++) {
                 if (this.matrix[u][i] > 0) {
