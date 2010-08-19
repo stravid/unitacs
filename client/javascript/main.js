@@ -179,7 +179,7 @@ function Map(mapData) {
     this.adjacencyMatrix = mapData.adjacencyMatrix;
     this.routes = new Array();
     
-    for (var i = 0; i < mapData.regions.length; i++) {
+    for (var i = 0, ii = mapData.regions.length; i < ii; i++) {
         this.routes[i] = new Array();
     }
     
@@ -277,7 +277,7 @@ Map.prototype.setSelectionStatus = function(status) {
         
         default:
             alert('error: false status parameter at Map.setSelectionStatus()');
-            break;
+            return;
     }
     
     if (back)
@@ -517,6 +517,9 @@ Map.prototype.initUnitSelection = function(regions) {
                 if (index != -1) {
                     that.changeCheckPoint(index);
                     that.setSelectionStatus('routing');
+                    console.log('checkpoint');
+                    console.log(that.checkPoints);
+                    console.log(that.routingPath);
                     return;
                 }
                 
@@ -524,11 +527,17 @@ Map.prototype.initUnitSelection = function(regions) {
                 if (index != -1) {
                     that.changePath(index);
                     that.setSelectionStatus('routing');
+                    console.log('path');
+                    console.log(that.checkPoints);
+                    console.log(that.routingPath);
                     return;
                 }
                 
                 if (that.checkMoveRoutes()) {
                     selectionUp();
+                    console.log('new start');
+                    console.log(that.checkPoints);
+                    console.log(that.routingPath);
                     return;
                 }
                 
@@ -537,6 +546,12 @@ Map.prototype.initUnitSelection = function(regions) {
                 that.checkPoints.push(that.hoverRegion);
                 
                 that.setSelectionStatus('routing');
+                
+                console.log('new point');
+                console.log([node, that.hoverRegion]);
+                console.log(that.getRoute(node, that.hoverRegion));
+                console.log(that.checkPoints);
+                console.log(that.routingPath);
             }
         }
     });
@@ -686,13 +701,12 @@ Map.prototype.getRoute = function(departureID, destinationID) {
                     node = predecessors[node];
                 }
                 
-                this.routes[departureID][i] = new Array();
                 this.routes[departureID][i] = route;
             }
         }
         
         return this.routes[departureID][destinationID];
-    }    
+    }
 };
 
 Map.prototype.resize = function() {
@@ -807,8 +821,10 @@ function Dijkstra(adjacencyMatrix, source) {
             
             u = this.Q.shift();
             
-            if (this.distance[u] == Infinity)
+            if (this.distance[u] == Infinity) {
+                console.log('error: dijkstra: node without connection');
                 break;
+            }
             
             for (var i = 0; i < this.matrix[u].length; i++) {
                 if (this.matrix[u][i] > 0) {
