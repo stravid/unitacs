@@ -51,6 +51,23 @@ CONST.MAP.UNITCIRCLE_VECTOR = (
     }
 )(CONST.MAP.UNITS_PER_REGION, CONST.MAP.UNIT_TO_CENTER);
 
+CONST.MAP.UNITCIRCLE_PATH = (
+    function(vectors, unitSize){
+        var paths = [];
+        var circlePath = "a" + unitSize + " " + unitSize + " 0 0 1 0 " + unitSize * 2 +
+                        "a" + unitSize + " " + unitSize + " 0 0 1 0 " + (-unitSize * 2);
+                        
+        paths.push("m" + vectors[0].x + " " + (vectors[0].y - unitSize) + circlePath +
+                    "m" + (-vectors[0].x) + " " + (unitSize - vectors[0].y) + " ");
+                    
+        for (var i = 1, ii = vectors.length; i < ii; i++) {
+            paths.push(paths[i - 1] + "m" + vectors[i].x + " " + (vectors[i].y - unitSize) + circlePath +
+                                        "m" + (-vectors[i].x) + " " + (unitSize - vectors[i].y) + " ");
+        }
+        return paths;
+    }
+)(CONST.MAP.UNITCIRCLE_VECTOR, CONST.MAP.UNIT_SIZE);
+
 // Raphael -----------------------------------------------
 
 Raphael.fn.region = function(ID, pathString, center, units, regionType, ownerID) {
@@ -107,6 +124,14 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
         );
     }
     
+    return unitCircle.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
+};
+
+Raphael.fn.unitCirclePath = function(units, ownerID, center) {
+    if (ownerID < 0 || units <= 0)
+        return 0;
+    
+    var unitCircle = this.path("M" + center.x + " " + center.y + " " + CONST.MAP.UNITCIRCLE_PATH[units-1]).attr({fill: CONST.MAP.PLAYERS[ownerID].color});
     return unitCircle.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
 };
 
@@ -230,7 +255,7 @@ Map.prototype.build = function(regions, matrix) {
         this.background,
         this.regions,
         this.paths,
-        this.moves //this.paper.arrow({x: this.width-10, y: this.height-10}, {x: 10, y: 10})
+        this.moves
     );
     
     this.initUnitSelection();
@@ -738,8 +763,8 @@ Map.prototype.createMove = function(departureID, destinationID, units, playerID,
     
     // FIXME move misses destination after resize
     this.moves.push(
-        this.paper.unitCircle(units, playerID, this.regions[departureID].center).animate(
-            {translation: translation.x + " " + translation.y, rotation: 360},
+        this.paper.unitCirclePath(units, playerID, this.regions[departureID].center).animate(
+            {translation: translation.x + " " + translation.y},
             duration,
             (function(){this.remove()})
         )
