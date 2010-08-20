@@ -32,37 +32,47 @@ var CONST = {
 // D3D5DB 59BA32 F2DE49 B82525 125496 8E8F94
 
 CONST.MAP.UNITCIRCLE_VECTOR = (
-    function(number, distance){
-        var vector = {x: 0, y: -distance};
-        var angle = 2 * Math.PI / number;
+    function(number, distance, unitSize){
+        var vectors = [];
         
-        vector.rotate = function(angle) {
+        function Vector(distance) {
+            this.x = 0;
+            this.y = distance;
+        };
+        
+        Vector.prototype.rotate = function(angle) {
             return {
                 x: this.x * Math.cos(angle) - this.y * Math.sin(angle),
                 y: (this.x * Math.sin(angle) + this.y * Math.cos(angle))
             }
         };
         
-        var vectors = [];
-        for (var i = 0; i < number; i++) {
-            vectors.push(vector.rotate(i * angle));
+        for (var i = 1; i <= number; i++) {
+            var vector = new Vector(-i / number * distance - unitSize/i);
+            var angle = 2 * Math.PI / i;
+            
+            vectors.push(new Array());
+            for (var j = 0; j < i; j++) {
+                vectors[i-1].push(vector.rotate(j * angle));
+            }
         }
         return vectors
     }
-)(CONST.MAP.UNITS_PER_REGION, CONST.MAP.UNIT_TO_CENTER);
+)(CONST.MAP.UNITS_PER_REGION, CONST.MAP.UNIT_TO_CENTER, CONST.MAP.UNIT_SIZE);
 
 CONST.MAP.UNITCIRCLE_PATH = (
     function(vectors, unitSize){
         var paths = [];
         var circlePath = "a" + unitSize + " " + unitSize + " 0 0 1 0 " + unitSize * 2 +
                         "a" + unitSize + " " + unitSize + " 0 0 1 0 " + (-unitSize * 2);
-                        
-        paths.push("m" + vectors[0].x + " " + (vectors[0].y - unitSize) + circlePath +
-                    "m" + (-vectors[0].x) + " " + (unitSize - vectors[0].y) + " ");
-                    
-        for (var i = 1, ii = vectors.length; i < ii; i++) {
-            paths.push(paths[i - 1] + "m" + vectors[i].x + " " + (vectors[i].y - unitSize) + circlePath +
-                                        "m" + (-vectors[i].x) + " " + (unitSize - vectors[i].y) + " ");
+        
+        for (var i = 0, ii = vectors.length; i < ii; i++) {
+            var pathString = "";
+            for (var j = 0, jj = vectors[i].length; j < jj; j++) {
+                pathString += "m" + vectors[i][j].x + " " + (vectors[i][j].y - unitSize) + circlePath +
+                                "m" + (-vectors[i][j].x) + " " + (unitSize - vectors[i][j].y) + " ";
+            }
+            paths.push(pathString);
         }
         return paths;
     }
@@ -115,8 +125,8 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
     for (var i = 0; i < units; i++) {
         unitCircle.push(
             this.circle(
-                center.x + CONST.MAP.UNITCIRCLE_VECTOR[i].x,
-                center.y + CONST.MAP.UNITCIRCLE_VECTOR[i].y,
+                center.x + CONST.MAP.UNITCIRCLE_VECTOR[CONST.MAP.UNITS_PER_REGION - 1][i].x,
+                center.y + CONST.MAP.UNITCIRCLE_VECTOR[CONST.MAP.UNITS_PER_REGION - 1][i].y,
                 CONST.MAP.UNIT_SIZE
             ).attr({
                 fill: CONST.MAP.PLAYERS[ownerID].color,
