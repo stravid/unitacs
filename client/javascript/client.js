@@ -30,7 +30,7 @@ socket.on('message', function(data) {
     }*/
 });
 
-document.getElementById('nameForm').onclick = function() {
+document.getElementById('play').onclick = function() {
     send({name: document.getElementById('playerName').value});  
 };
 
