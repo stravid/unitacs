@@ -34,6 +34,9 @@ server = http.createServer(function(req, res){
     
     // your normal server code
     var path = url.parse(req.url).pathname;
+    
+    sys.puts(path);
+    
     writeFile(path, res);
 }),
 
