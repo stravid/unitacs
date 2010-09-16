@@ -26,3 +26,7 @@ socket.on('message', function(data) {
         message(data);
     }*/
 });
+
+document.getElementById('nameForm').onclick = function() {
+    socket.send(JSON.stringify({playerName: document.getElementById('playerName').value}));  
+};
