@@ -28,5 +28,5 @@ socket.on('message', function(data) {
 });
 
 document.getElementById('nameForm').onclick = function() {
-    socket.send(JSON.stringify({playerName: document.getElementById('playerName').value}));  
+    socket.send({playerName: document.getElementById('playerName').value});  
 };
