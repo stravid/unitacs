@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Unitacs</title>
+
+    <meta charset="utf-8"/>
+    <meta name="description" content="~150 character description" />
+    <meta name="author" content="David Strauß" />
+    <meta name="author" content="Eberhard Gräther" />
+    
+    <link rel="stylesheet" media="all" href="http://localhost/unitacs/client/style/style.css"/>
+    
+    <script>
+        if (!window.WebSocket && window.location != "http://localhost:8080/client/index.html") {
+            window.location = "http://localhost:8080/client/index.html";
+        }
+    </script>
+    <script src="../socket.io-client/json.js"></script>
+    <script src="../socket.io-client/socket.io.js"></script>
+</head>
+<body>
+
+    <form>
+        <p>Name</p>
+        <p>
+            <input type="text" id="playerName" />
+            <input type="button" id="play" value="Play"/>
+        </p>
+    </form>
+    
+    <script src="http://localhost/unitacs/client/javascript/client.js"></script>
+</body>    
+</html>
