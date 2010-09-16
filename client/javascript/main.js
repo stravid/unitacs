@@ -32,24 +32,51 @@ var CONST = {
 // D3D5DB 59BA32 F2DE49 B82525 125496 8E8F94
 
 CONST.MAP.UNITCIRCLE_VECTOR = (
-    function(number, distance){
-        var vector = {x: 0, y: -distance};
-        var angle = 2 * Math.PI / number;
+    function(number, distance, unitSize){
+        var vectors = [];
         
-        vector.rotate = function(angle) {
+        function Vector(distance) {
+            this.x = 0;
+            this.y = distance;
+        };
+        
+        Vector.prototype.rotate = function(angle) {
             return {
                 x: this.x * Math.cos(angle) - this.y * Math.sin(angle),
                 y: (this.x * Math.sin(angle) + this.y * Math.cos(angle))
             }
         };
         
-        var vectors = [];
-        for (var i = 0; i < number; i++) {
-            vectors.push(vector.rotate(i * angle));
+        for (var i = 1; i <= number; i++) {
+            var vector = new Vector(-i / number * distance - unitSize/i);
+            var angle = 2 * Math.PI / i;
+            
+            vectors.push(new Array());
+            for (var j = 0; j < i; j++) {
+                vectors[i-1].push(vector.rotate(j * angle));
+            }
         }
         return vectors
     }
-)(CONST.MAP.UNITS_PER_REGION, CONST.MAP.UNIT_TO_CENTER);
+)(CONST.MAP.UNITS_PER_REGION, CONST.MAP.UNIT_TO_CENTER, CONST.MAP.UNIT_SIZE);
+
+CONST.MAP.UNITCIRCLE_PATH = (
+    function(vectors, unitSize){
+        var paths = [];
+        var circlePath = "a" + unitSize + " " + unitSize + " 0 0 1 0 " + unitSize * 2 +
+                        "a" + unitSize + " " + unitSize + " 0 0 1 0 " + (-unitSize * 2);
+        
+        for (var i = 0, ii = vectors.length; i < ii; i++) {
+            var pathString = "";
+            for (var j = 0, jj = vectors[i].length; j < jj; j++) {
+                pathString += "m" + vectors[i][j].x + " " + (vectors[i][j].y - unitSize) + circlePath +
+                                "m" + (-vectors[i][j].x) + " " + (unitSize - vectors[i][j].y) + " ";
+            }
+            paths.push(pathString);
+        }
+        return paths;
+    }
+)(CONST.MAP.UNITCIRCLE_VECTOR, CONST.MAP.UNIT_SIZE);
 
 // Raphael -----------------------------------------------
 
@@ -98,8 +125,8 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
     for (var i = 0; i < units; i++) {
         unitCircle.push(
             this.circle(
-                center.x + CONST.MAP.UNITCIRCLE_VECTOR[i].x,
-                center.y + CONST.MAP.UNITCIRCLE_VECTOR[i].y,
+                center.x + CONST.MAP.UNITCIRCLE_VECTOR[CONST.MAP.UNITS_PER_REGION - 1][i].x,
+                center.y + CONST.MAP.UNITCIRCLE_VECTOR[CONST.MAP.UNITS_PER_REGION - 1][i].y,
                 CONST.MAP.UNIT_SIZE
             ).attr({
                 fill: CONST.MAP.PLAYERS[ownerID].color,
@@ -107,6 +134,14 @@ Raphael.fn.unitCircle = function(units, ownerID, center) {
         );
     }
     
+    return unitCircle.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
+};
+
+Raphael.fn.unitCirclePath = function(units, ownerID, center) {
+    if (ownerID < 0 || units <= 0)
+        return 0;
+    
+    var unitCircle = this.path("M" + center.x + " " + center.y + " " + CONST.MAP.UNITCIRCLE_PATH[units-1]).attr({fill: CONST.MAP.PLAYERS[ownerID].color});
     return unitCircle.scale(CONST.MAP.SCALE, CONST.MAP.SCALE, 0, 0);
 };
 
@@ -179,7 +214,7 @@ function Map(mapData) {
     this.adjacencyMatrix = mapData.adjacencyMatrix;
     this.routes = new Array();
     
-    for (var i = 0; i < mapData.regions.length; i++) {
+    for (var i = 0, ii = mapData.regions.length; i < ii; i++) {
         this.routes[i] = new Array();
     }
     
@@ -230,7 +265,7 @@ Map.prototype.build = function(regions, matrix) {
         this.background,
         this.regions,
         this.paths,
-        this.moves //this.paper.arrow({x: this.width-10, y: this.height-10}, {x: 10, y: 10})
+        this.moves
     );
     
     this.initUnitSelection();
@@ -277,7 +312,7 @@ Map.prototype.setSelectionStatus = function(status) {
         
         default:
             alert('error: false status parameter at Map.setSelectionStatus()');
-            break;
+            return;
     }
     
     if (back)
@@ -517,6 +552,9 @@ Map.prototype.initUnitSelection = function(regions) {
                 if (index != -1) {
                     that.changeCheckPoint(index);
                     that.setSelectionStatus('routing');
+                    // console.log('checkpoint');
+                    // console.log(that.checkPoints);
+                    // console.log(that.routingPath);
                     return;
                 }
                 
@@ -524,11 +562,17 @@ Map.prototype.initUnitSelection = function(regions) {
                 if (index != -1) {
                     that.changePath(index);
                     that.setSelectionStatus('routing');
+                    // console.log('path');
+                    // console.log(that.checkPoints);
+                    // console.log(that.routingPath);
                     return;
                 }
                 
                 if (that.checkMoveRoutes()) {
                     selectionUp();
+                    // console.log('new start');
+                    // console.log(that.checkPoints);
+                    // console.log(that.routingPath);
                     return;
                 }
                 
@@ -537,6 +581,12 @@ Map.prototype.initUnitSelection = function(regions) {
                 that.checkPoints.push(that.hoverRegion);
                 
                 that.setSelectionStatus('routing');
+                
+                // console.log('new point');
+                // console.log([node, that.hoverRegion]);
+                // console.log(that.getRoute(node, that.hoverRegion));
+                // console.log(that.checkPoints);
+                // console.log(that.routingPath);
             }
         }
     });
@@ -686,13 +736,12 @@ Map.prototype.getRoute = function(departureID, destinationID) {
                     node = predecessors[node];
                 }
                 
-                this.routes[departureID][i] = new Array();
                 this.routes[departureID][i] = route;
             }
         }
         
         return this.routes[departureID][destinationID];
-    }    
+    }
 };
 
 Map.prototype.resize = function() {
@@ -724,8 +773,8 @@ Map.prototype.createMove = function(departureID, destinationID, units, playerID,
     
     // FIXME move misses destination after resize
     this.moves.push(
-        this.paper.unitCircle(units, playerID, this.regions[departureID].center).animate(
-            {translation: translation.x + " " + translation.y, rotation: 360},
+        this.paper.unitCirclePath(units, playerID, this.regions[departureID].center).animate(
+            {translation: translation.x + " " + translation.y},
             duration,
             (function(){this.remove()})
         )
