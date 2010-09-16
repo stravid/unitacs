@@ -137,7 +137,6 @@ function UnitacsClient() {
 };
 
 UnitacsClient.prototype.onMessage = function(messageObject) {
-    
     if (messageObject.mapData)
         this.map = new Map(messageObject.mapData);
     
@@ -150,6 +149,7 @@ UnitacsClient.prototype.onMessage = function(messageObject) {
                 var update = messageObject.mapUpdate[i];
                 this.map.regions[update.ID].update(update.units, update.ownerID);
             }
+            
             this.map.reselect();
         }
         
