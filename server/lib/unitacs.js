@@ -17,6 +17,7 @@ Unitacs.prototype.handleData = function(data, client) {
             client.send({isNameTaken: true});
         } else {
             client.name = data.name;
+            this.takenNames.push(data.name);
             // IMPLEMENT: this.addPlayerToGame()
         }
     } else {

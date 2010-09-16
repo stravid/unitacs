@@ -31,5 +31,13 @@ socket.on('message', function(data) {
 });
 
 document.getElementById('nameForm').onclick = function() {
-    socket.send({name: document.getElementById('playerName').value});  
+    send({name: document.getElementById('playerName').value});  
+};
+
+function send(data) {
+    if (window.WebSocket) {
+        socket.send('~j~' + JSON.stringify(data));
+    } else {
+        socket.send(data);
+    }
 };
