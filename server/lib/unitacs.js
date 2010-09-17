@@ -22,7 +22,7 @@ Unitacs.prototype.handleData = function(data, client) {
             this.addPlayerToGame(client);
         }
     } else {
-        // IMPLEMENT: client.game.handleData(data, client)
+        client.game.handleData(data, client);
     }
 };
 
