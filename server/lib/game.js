@@ -21,7 +21,7 @@ Game.prototype.handleData = function(data, client) {
 };
 
 Game.prototype.handleMessage = function(message, name) {
-    var responseObject {
+    var responseObject = {
         name: name,
         message: message
     };
