@@ -29,6 +29,8 @@ Unitacs.prototype.handleData = function(data, client) {
 // IMPLEMENT: gameConfig
 Unitacs.prototype.createNewGame = function() {
     var game = new Game();
+    
+    this.games.push(game);
 };
 
 Unitacs.prototype.addPlayerToGame = function(client) {
