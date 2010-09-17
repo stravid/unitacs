@@ -1,5 +1,5 @@
 var sys = require('sys'),
-    Game = require('./lib/game');
+    Game = require('./game');
 
 function Unitacs(){
     sys.puts('Unitacs');
