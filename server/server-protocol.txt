@@ -1,0 +1,13 @@
+A = Accepts
+S = Sends
+
+[A, S] name: "String"
+
+[S] isNameTaken: true
+
+[A] message: "String"
+
+[S] chat: {
+    player: "String",
+    message: "String"
+}

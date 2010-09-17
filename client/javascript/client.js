@@ -16,6 +16,8 @@ socket.on('message', function(data) {
     if (data.isNameTaken) {
         document.getElementById('error').style.display = 'block';
     }
+    
+    
     /*
     if ('buffer' in data) {
         document.getElementById('form').style.display='block';
@@ -32,6 +34,10 @@ socket.on('message', function(data) {
 
 document.getElementById('play').onclick = function() {
     send({name: document.getElementById('playerName').value});  
+};
+
+document.getElementById('send').onclick = function() {
+    send({message: document.getElementById('message').value});  
 };
 
 function send(data) {
