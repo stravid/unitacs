@@ -44,6 +44,18 @@ document.getElementById('send').onclick = function() {
     send({message: document.getElementById('message').value});  
 };
 
+document.getElementById('nameForm').onsubmit = function() {
+    send({name: document.getElementById('playerName').value});
+    
+    return false;
+};
+
+document.getElementById('chatForm').onsubmit = function() {
+    send({message: document.getElementById('message').value});
+    
+    return false; 
+};
+
 function send(data) {
     if (window.WebSocket) {
         socket.send('~j~' + JSON.stringify(data));
