@@ -39,16 +39,18 @@ Unitacs.prototype.createNewGame = function() {
     
     map = this.constructMap(map);
     
-    var regionsPerType = [];
+    var regionIDsPerType = [];
     
-    regionsPerType[0] = [];
-    regionsPerType[1] = [];
-    regionsPerType[2] = [];
-    regionsPerType[3] = [];
+    regionIDsPerType[0] = [];
+    regionIDsPerType[1] = [];
+    regionIDsPerType[2] = [];
+    regionIDsPerType[3] = [];
     
     for (var i = 0; i < map.regions.length; i++) {
-        regionsPerType[map.regions[i].regionType].push(map.regions[i].ID);
+        regionIDsPerType[map.regions[i].regionType].push(map.regions[i].ID);
     }
+    
+    map.regionIDsPerType = regionIDsPerType;
     
     var game = new Game(map);
     
@@ -95,7 +97,7 @@ Unitacs.prototype.constructMap = function(map) {
             unusedRegionIDs.shuffle();
             newBaseID = unusedRegionIDs.shift();
         }
-        //sys.puts('newBaseID: ' + newBaseID);
+        
         map.regions[newBaseID].regionType = 0;
     }
 

@@ -42,7 +42,6 @@ socket.on('message', function(data) {
             if (secondsUntilStart > 0) {
                 secondsUntilStart--;
                 document.getElementById('seconds').innerHTML = secondsUntilStart;
-                console.log('buh');
             } else {
                 clearTimeout(countdownIntervalID);
                 document.getElementById('countdown').style.display = 'none';
