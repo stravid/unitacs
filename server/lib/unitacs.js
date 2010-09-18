@@ -104,7 +104,7 @@ Unitacs.prototype.constructMap = function(map) {
     
     sys.puts(sys.inspect(unusedRegionIDs));
     sys.puts(sys.inspect(regionIDs));
-    unusedRegionIDs.concat(regionIDs);
+    unusedRegionIDs = unusedRegionIDs.concat(regionIDs);
     
     sys.puts(sys.inspect(unusedRegionIDs));
     
