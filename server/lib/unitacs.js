@@ -88,7 +88,9 @@ Unitacs.prototype.constructMap = function(map) {
             neighborIDs = map.regions[newBaseID].neighborIDs;
             
             for (var j = 0; j < neighborIDs.length; j++) {
-                unusedRegionIDs.push(regionIDs.splice(regionIDs.indexOf(neighborIDs[j]), 1));
+                if (regionIDs.contains(neighborIDs[j])) {
+                    unusedRegionIDs.push(regionIDs.splice(regionIDs.indexOf(neighborIDs[j]), 1));
+                }
             }
         } else {
             sys.puts('WARNING: Base is connected with other base!');
