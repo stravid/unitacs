@@ -39,6 +39,19 @@ Unitacs.prototype.createNewGame = function() {
     
     map = this.constructMap(map);
     
+    var regionsPerType = [];
+    
+    regionsPerType[0] = [];
+    regionsPerType[1] = [];
+    regionsPerType[2] = [];
+    regionsPerType[3] = [];
+    
+    for (var i = 0; i < map.regions.length; i++) {
+        regionsPerType[map.regions[i].regionType].push(map.regions[i].ID);
+    }
+    
+    sys.puts(sys.inspect(regionsPerType));
+    
     var game = new Game(map);
     
     this.games.push(game);
