@@ -89,7 +89,7 @@ Unitacs.prototype.constructMap = function(map) {
             
             for (var j = 0; j < neighborIDs.length; j++) {
                 if (regionIDs.contains(neighborIDs[j])) {
-                    unusedRegionIDs.push(regionIDs.splice(regionIDs.indexOf(neighborIDs[j]), 1));
+                    unusedRegionIDs = unusedRegionIDs.concat(regionIDs.splice(regionIDs.indexOf(neighborIDs[j]), 1));
                 }
             }
         } else {
