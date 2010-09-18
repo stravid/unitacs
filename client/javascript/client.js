@@ -4,6 +4,10 @@ io.setPath('../socket.io-client/');
 
 var socket = new io.Socket(null, {port: 8080});
 
+var countdownIntervalID,
+    timeOfStart,
+    secondsUntilStart;
+
 socket.connect();
 socket.on('message', function(data) {
     if (typeof(data) == "string") {
@@ -27,19 +31,23 @@ socket.on('message', function(data) {
         document.getElementById('infoContainer').style.display = 'block';
     }
     
-    
-    /*
-    if ('buffer' in data) {
-        document.getElementById('form').style.display='block';
-        document.getElementById('chat').innerHTML = '';
+    if (data.timeOfStart) {
+        timeOfStart = data.timeOfStart;
+        secondsUntilStart = Math.ceil((timeOfStart - new Date().getSeconds()) / 1000);
         
-        for (var i in data.buffer) {
-            message(data.buffer[i]);
-        }
+        document.getElementById('seconds').innerHTML = secondsUntilStart;
+        document.getElementById('countdown').style.display = 'block';
         
-    } else {
-        message(data);
-    }*/
+        countdownIntervalID = setInterval(function() {
+            if (secondsUntilStart > 0) {
+                secondsUntilStart--;
+                document.getElementById('seconds').innerHTML = secondsUntilStart;
+                console.log('buh');
+            } else {
+                clearTimeout(countdownIntervalID);
+            }
+        }, 1000); 
+    }
 });
 
 document.getElementById('play').onclick = function() {

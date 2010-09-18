@@ -24,3 +24,7 @@
     height: 200px;
     overflow: scroll;
 }
+
+#seconds {
+    font-size: 300%;
+}

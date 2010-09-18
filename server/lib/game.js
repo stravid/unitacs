@@ -6,6 +6,8 @@ function Game() {
     this.isLive = false;
     this.players = [];
     this.startTimeoutID;
+    this.timeOfStart;
+    this.secondsUntilStart = 60;
 };
 
 Game.prototype.addPlayer = function(client) {
@@ -29,10 +31,13 @@ Game.prototype.addPlayer = function(client) {
         if (this.players.length == 2) {
             var that = this;
             
+            this.timeOfStart = new Date().getSeconds() + this.secondsUntilStart * 1000;
+            this.broadcast({timeOfStart: this.timeOfStart});
+            
             this.startTimeoutID = setTimeout(function() {
                 // IMPLEMENT: start()
                 that.broadcast({chat: {name: 'God', message: 'Hi.'}});
-            }, 10000);
+            }, this.secondsUntilStart * 1000);
         }
     }
 };
