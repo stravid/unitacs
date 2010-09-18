@@ -1,5 +1,6 @@
 var sys = require('sys'),
-    Game = require('./game');
+    Game = require('./game'),
+    MapGenerator = require('./mapgenerator/mapgenerator');
 
 function Unitacs(){
     sys.puts('Unitacs');
@@ -27,8 +28,18 @@ Unitacs.prototype.handleData = function(data, client) {
 };
 
 // IMPLEMENT: gameConfig
+// FIXME: no hardcoded constants
 Unitacs.prototype.createNewGame = function() {
-    var game = new Game();
+    var mapGenerator = new MapGenerator(500, 400, 20, false);
+    
+    mapGenerator.createHexagonPattern(30, 0.5, false);
+    mapGenerator.generate();
+    
+    var map = mapGenerator.getMap();
+    
+    map = this.constructMap(map);
+    
+    var game = new Game(map);
     
     this.games.push(game);
 };
@@ -41,8 +52,69 @@ Unitacs.prototype.addPlayerToGame = function(client) {
     this.games[this.games.length - 1].addPlayer(client);
 };
 
+Unitacs.prototype.constructMap = function(map) {
+    var regionIDs = [],
+        unusedRegionIDs = [],
+        newBaseID,
+        numberOfBases = Math.ceil(map.regions.length / 4),
+        neighborIDs;
+    
+    // FIXME: discuss how to procced with ownerID, change in ownerName? client rewrite?
+    
+    for (var i = 0; i < map.regions.length; i++) {
+          map.regions[i].ownerID = -1;
+          map.regions[i].units = 0;
+          regionIDs[i] = i;
+    }
+    
+    regionIDs.shuffle();
+    
+    for (var i = 0; i < numberOfBases; i++) {
+        if (regionIDs.length > 0) {
+            newBaseID = regionIDs.pop();
+            neighborIDs = map.regions[newBaseID].neighborIDs;
+            
+            for (var j = 0; j < neighborIDs.length; j++) {
+                unusedRegionIDs.push(regionIDs.splice(regionIDs.indexOf(neighborIDs[j]), 1));
+            }
+        } else {
+            sys.puts('WARNING: Base is connected with other base!');
+            newBaseID = unusedRegionIDs.shift();
+        }
+        
+        map.regions[newBaseID].regionType = 0;
+    }
+    
+    for (var i = 0; i < unusedRegionIDs.length; i++) {
+        map.regions[unusedRegionIDs[i]].regionType = i % 3 + 1;
+    }
+    
+    return map;
+};
+
 Array.prototype.contains = function(item, from) {
     return this.indexOf(item, from) != -1;
+};
+
+Array.prototype.shuffle = function() { 
+    var i = this.length; 
+    
+    if (i < 2)
+        return false;
+        
+    do { 
+        var zi = Math.floor(Math.random() * i); 
+        var t = this[zi];
+         
+        this[zi] = this[--i];
+        this[i] = t; 
+    } while (i) 
+    
+    return true;
+};
+
+function rand(minimum, maximum) {
+    return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 };
 
 module.exports = Unitacs;

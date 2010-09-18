@@ -1,8 +1,9 @@
 var sys = require('sys');
 
-function Game() {
+function Game(map) {
     sys.puts('Game');
     
+    this.map = map;
     this.isLive = false;
     this.players = [];
     this.startTimeoutID;
