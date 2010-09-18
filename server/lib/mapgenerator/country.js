@@ -50,6 +50,10 @@ Array.prototype.getLast = function() {
     return (this.length) ? this[this.length - 1] : null;
 };
 
+function rand(minimum, maximum) {
+    return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+};
+
 function Country() {
     this.hexagons = new Array();
     this.neighbors = new Array();
