@@ -97,15 +97,17 @@ Unitacs.prototype.constructMap = function(map) {
             unusedRegionIDs.shuffle();
             newBaseID = unusedRegionIDs.shift();
         }
-        sys.puts('newBaseID: ' + newBaseID);
+        //sys.puts('newBaseID: ' + newBaseID);
         map.regions[newBaseID].regionType = 0;
     }
     
     sys.puts(sys.inspect(unusedRegionIDs));
+    sys.puts(sys.inspect(regionIDs));
+    unusedRegionIDs.concat(regionIDs);
     
     for (var i = 0; i < unusedRegionIDs.length; i++) {
-        sys.puts('ID: ' + unusedRegionIDs[i]);
-        sys.puts(sys.inspect(map.regions[unusedRegionIDs[i]]));
+        //sys.puts('ID: ' + unusedRegionIDs[i]);
+        //sys.puts(sys.inspect(map.regions[unusedRegionIDs[i]]));
         map.regions[unusedRegionIDs[i]].regionType = i % 3 + 1;
     }
     
