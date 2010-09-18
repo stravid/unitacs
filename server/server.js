@@ -62,6 +62,8 @@ io.on('connection', function(client) {
         unitacsServer.handleData(data, client);
     });
     
+    // IMPLEMENT: disconnect
+    
     // client.send({ buffer: buffer });
     // client.broadcast({ announcement: client.sessionId + ' connected' });
 
