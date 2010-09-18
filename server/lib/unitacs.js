@@ -95,7 +95,7 @@ Unitacs.prototype.constructMap = function(map) {
             unusedRegionIDs.shuffle();
             newBaseID = unusedRegionIDs.shift();
         }
-        
+        sys.puts('newBaseID: ' + newBaseID);
         map.regions[newBaseID].regionType = 0;
     }
     
