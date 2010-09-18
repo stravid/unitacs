@@ -31,7 +31,7 @@ Game.prototype.addPlayer = function(client) {
         if (this.players.length == 2) {
             var that = this;
             
-            this.timeOfStart = new Date().getSeconds() + this.secondsUntilStart * 1000;
+            this.timeOfStart = new Date().getTime() + this.secondsUntilStart * 1000;
             this.broadcast({timeOfStart: this.timeOfStart});
             
             this.startTimeoutID = setTimeout(function() {

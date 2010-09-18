@@ -33,7 +33,7 @@ socket.on('message', function(data) {
     
     if (data.timeOfStart) {
         timeOfStart = data.timeOfStart;
-        secondsUntilStart = Math.ceil((timeOfStart - new Date().getSeconds()) / 1000);
+        secondsUntilStart = Math.ceil((timeOfStart - new Date().getTime()) / 1000);
         
         document.getElementById('seconds').innerHTML = secondsUntilStart;
         document.getElementById('countdown').style.display = 'block';
