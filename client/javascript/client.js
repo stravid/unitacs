@@ -21,6 +21,12 @@ socket.on('message', function(data) {
         document.getElementById('chat').innerHTML = document.getElementById('chat').innerHTML + '<li><strong>' + data.chat.name + '</strong>: ' + data.chat.message + '</li>';
     }
     
+    if (data.map) {
+        document.getElementById('nameForm').style.display = 'none';
+        document.getElementById('mapContainer').style.display = 'block';
+        document.getElementById('infoContainer').style.display = 'block';
+    }
+    
     
     /*
     if ('buffer' in data) {

@@ -16,6 +16,8 @@ Game.prototype.addPlayer = function(client) {
     
     // IMPLEMENT: send map
     
+    client.send({map: true});
+    
     // IMPLEMENT: action(set base with X units)
     
     // IMPLEMENT: update player list
@@ -29,6 +31,7 @@ Game.prototype.addPlayer = function(client) {
                 var that = this;
                 
                 // IMPLEMENT: start()
+                that.broadcast({chat: {name: 'God', message: 'Hi.'}});
             }, 60000);
         }
     }
