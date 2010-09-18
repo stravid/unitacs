@@ -87,9 +87,6 @@ Unitacs.prototype.constructMap = function(map) {
             newBaseID = regionIDs.pop();
             neighborIDs = map.regions[newBaseID].neighborIDs;
             
-            sys.puts(sys.inspect(map.regions[newBaseID].ID));
-            sys.puts('newBaseID: ' + newBaseID);
-            
             for (var j = 0; j < neighborIDs.length; j++) {
                 unusedRegionIDs.push(regionIDs.splice(regionIDs.indexOf(neighborIDs[j]), 1));
             }
@@ -103,7 +100,7 @@ Unitacs.prototype.constructMap = function(map) {
     }
     
     for (var i = 0; i < unusedRegionIDs.length; i++) {
-        sys.puts('ID: ' + i);
+        sys.puts('ID: ' + unusedRegionIDs[i]);
         sys.puts(sys.inspect(map.regions[unusedRegionIDs[i]]));
         map.regions[unusedRegionIDs[i]].regionType = i % 3 + 1;
     }
