@@ -47,11 +47,8 @@ Unitacs.prototype.createNewGame = function() {
     regionsPerType[3] = [];
     
     for (var i = 0; i < map.regions.length; i++) {
-        sys.puts('i: ' + i + ' type: ' + map.regions[i].regionType);
         regionsPerType[map.regions[i].regionType].push(map.regions[i].ID);
     }
-    
-    sys.puts(sys.inspect(regionsPerType));
     
     var game = new Game(map);
     
@@ -101,16 +98,10 @@ Unitacs.prototype.constructMap = function(map) {
         //sys.puts('newBaseID: ' + newBaseID);
         map.regions[newBaseID].regionType = 0;
     }
-    
-    sys.puts(sys.inspect(unusedRegionIDs));
-    sys.puts(sys.inspect(regionIDs));
+
     unusedRegionIDs = unusedRegionIDs.concat(regionIDs);
     
-    sys.puts(sys.inspect(unusedRegionIDs));
-    
     for (var i = 0; i < unusedRegionIDs.length; i++) {
-        //sys.puts('ID: ' + unusedRegionIDs[i]);
-        //sys.puts(sys.inspect(map.regions[unusedRegionIDs[i]]));
         map.regions[unusedRegionIDs[i]].regionType = i % 3 + 1;
     }
     
