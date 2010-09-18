@@ -23,6 +23,10 @@ var http = require('http'),
             case '.swf':
                 contentType = 'application/x-shockwave-flash';
                 break;
+                
+            case '.css':
+                contentType = 'text/css';
+                break;
         }
         
         fs.readFile(path, function(err, data) {
