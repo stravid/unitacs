@@ -37,8 +37,6 @@ Unitacs.prototype.createNewGame = function() {
     
     var map = mapGenerator.getMap();
     
-    sys.puts(sys.inspect(map));
-    
     map = this.constructMap(map);
     
     var regionsPerType = [];
