@@ -1,3 +1,21 @@
-body {
-    background-color: red;
+#nameForm {
+    padding: 25px;
+    border: 2px solid #000000;
+    width: 25%;
+    margin: 0 auto;
+    margin-top: 10%;
+    display: none;
+}
+
+#mapContainer {
+    background-color: rgba(100, 100, 0, 0.5);
+    width: 75%;
+    display: block;
+    float: left;
+}
+
+#infoContainer {
+    background-color: rgba(0, 100, 0, 0.5);
+    width: 25%;
+    margin-left: 75%;
 }
