@@ -85,6 +85,7 @@ Game.prototype.action = function(move) {
 
 Game.prototype.handleMove = function(move) {
     // IMPLEMENT: check if correct move
+    // IMPLEMENT: only if live
     
     if (this.map.regions[move.route[0]].ownerID == move.ownerID || this.map.regions[move.route[0]].ownerID == -1) {
         if (this.map.regions[move.route[0]].ownerID == move.ownerID) {
@@ -97,7 +98,7 @@ Game.prototype.handleMove = function(move) {
         }
         
         // IMPLEMENT: optical move
-       move.shift(); 
+       move.route.shift(); 
         
         var closureMove = move;
         var that = this;
