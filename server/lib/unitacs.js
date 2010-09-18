@@ -94,6 +94,7 @@ Unitacs.prototype.constructMap = function(map) {
             }
         } else {
             sys.puts('WARNING: Base is connected with other base!');
+            unusedRegionIDs.shuffle();
             newBaseID = unusedRegionIDs.shift();
         }
         

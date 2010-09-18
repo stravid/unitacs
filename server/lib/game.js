@@ -19,7 +19,7 @@ Game.prototype.addPlayer = function(client) {
     
     // IMPLEMENT: send map
     
-    client.send({map: map});
+    client.send({map: this.map});
     
     // IMPLEMENT: action(set base with X units)
     
