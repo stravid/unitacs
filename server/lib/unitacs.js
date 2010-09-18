@@ -99,6 +99,8 @@ Unitacs.prototype.constructMap = function(map) {
         map.regions[newBaseID].regionType = 0;
     }
     
+    sys.puts(sys.inspect(unusedRegionIDs));
+    
     for (var i = 0; i < unusedRegionIDs.length; i++) {
         sys.puts('ID: ' + unusedRegionIDs[i]);
         sys.puts(sys.inspect(map.regions[unusedRegionIDs[i]]));
