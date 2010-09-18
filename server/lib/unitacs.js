@@ -78,9 +78,12 @@ Unitacs.prototype.constructMap = function(map) {
           map.regions[i].ownerID = -1;
           map.regions[i].units = 0;
           regionIDs[i] = i;
+          sys.puts(i);
     }
     
     regionIDs.shuffle();
+    
+    sys.puts(sys.inspect(regionIDs));
     
     for (var i = 0; i < numberOfBases; i++) {
         if (regionIDs.length > 0) {
