@@ -30,10 +30,10 @@ Unitacs.prototype.handleData = function(data, client) {
 // IMPLEMENT: gameConfig
 // FIXME: no hardcoded constants
 Unitacs.prototype.createNewGame = function() {
-    var mapGenerator = new MapGenerator(500, 400, 20, false);
+    var mapGenerator = new MapGenerator();
     
-    mapGenerator.createHexagonPattern(30, 0.5, false);
-    mapGenerator.generate();
+    mapGenerator.createHexagonPattern(500, 400, 20, false);
+    mapGenerator.generate(30, 0.5, false);
     
     var map = mapGenerator.getMap();
     
