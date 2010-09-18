@@ -11,7 +11,7 @@ function Game() {
 Game.prototype.addPlayer = function(client) {
     sys.puts('Player added');
     
-    this.player.push(client);
+    this.players.push(client);
     client.game = this;
     
     // IMPLEMENT: send map
