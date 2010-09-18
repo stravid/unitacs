@@ -5,12 +5,33 @@ function Game() {
     
     this.isLive = false;
     this.players = [];
+    this.startTimeoutID;
 };
 
 Game.prototype.addPlayer = function(client) {
     sys.puts('Player added');
     
-    // IMPLEMENT: logic
+    this.player.push(client);
+    client.game = this;
+    
+    // IMPLEMENT: send map
+    
+    // IMPLEMENT: action(set base with X units)
+    
+    // IMPLEMENT: update player list
+    
+    if (this.players.length == 4) {
+        // IMPLEMENT: start()
+        clearTimeout(this.startTimeoutID);
+    } else {
+        if (this.players.length == 2) {
+            this.startTimeoutID = setTimeout(function() {
+                var that = this;
+                
+                // IMPLEMENT: start()
+            }, 60000);
+        }
+    }
 };
 
 Game.prototype.handleData = function(data, client) {
