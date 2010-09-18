@@ -27,12 +27,12 @@ Game.prototype.addPlayer = function(client) {
         clearTimeout(this.startTimeoutID);
     } else {
         if (this.players.length == 2) {
+            var that = this;
+            
             this.startTimeoutID = setTimeout(function() {
-                var that = this;
-                
                 // IMPLEMENT: start()
                 that.broadcast({chat: {name: 'God', message: 'Hi.'}});
-            }, 60000);
+            }, 10000);
         }
     }
 };
