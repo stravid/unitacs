@@ -102,6 +102,8 @@ Unitacs.prototype.constructMap = function(map) {
     }
     
     for (var i = 0; i < unusedRegionIDs.length; i++) {
+        sys.puts(i);
+        sys.puts(sys.inspect(map.regions[unusedRegionIDs[i]]));
         map.regions[unusedRegionIDs[i]].regionType = i % 3 + 1;
     }
     
