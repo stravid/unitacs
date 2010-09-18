@@ -28,3 +28,7 @@
 #seconds {
     font-size: 300%;
 }
+
+#countdown {
+    display: none;
+}

@@ -45,6 +45,7 @@ socket.on('message', function(data) {
                 console.log('buh');
             } else {
                 clearTimeout(countdownIntervalID);
+                document.getElementById('countdown').style.display = 'none';
             }
         }, 1000); 
     }

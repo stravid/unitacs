@@ -38,6 +38,8 @@ Game.prototype.addPlayer = function(client) {
                 // IMPLEMENT: start()
                 that.broadcast({chat: {name: 'God', message: 'Hi.'}});
             }, this.secondsUntilStart * 1000);
+        } else if (this.players.length != 1) {
+            client.send({timeOfStart: this.timeOfStart});
         }
     }
 };
