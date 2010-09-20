@@ -61,39 +61,79 @@ Game.prototype.start = function() {
     this.isLive = true; 
 };
 
+
+// FIXME: better solution
+// FIXME: test cases with sys.puts()
 Game.prototype.action = function(move) {
-    var updateMapFlag = false;
-    
-    if (this.map.regions[move.route[0]].ownerID != move.ownerID && this.map.regions[move.route[0]].ownerID != -1) {
-        move.units -= this.map.regions[move.route[0]].units;
-        updateMapFlag = true;
-    }
-    
-    if (move.units > 0) {
-        if (move.route.length == 1) {
-            // IMPLEMENT: update map
-            updateMapFlag = true;
+    var regionOwner = this.map.regions[move.route[0]].ownerID;
+
+    if (move.route.length > 1) {
+        if (regionOwner != move.ownerID && regionOwner != -1) {
+            var attackerUnits = move.units;
+
+            move.units -= this.map.regions[move.route[0]].units;
+            this.map.regions[move.route[0]].units -= attackerUnits;
+
+            if (move.units > 0) {
+                this.updateRegion(move.route[0], -1, 0);
+                this.handleMove(move);
+            } else if (this.map.regions[move.route[0]].units > 0) {
+                this.updateRegion(move.route[0], regionOwner, 0);
+            } else {
+                this.updateRegion(move.route[0], -1, 0);
+            }
         } else {
             this.handleMove(move);
         }
+    } else {
+        if (regionOwner != move.ownerID && regionOwner != -1) {
+            var attackerUnits = move.units;
+
+            move.units -= this.map.regions[move.route[0]].units;
+            this.map.regions[move.route[0]].units -= attackerUnits;
+
+            if (move.units > 0) {
+                this.updateRegion(move.route[0], move.ownerID, move.units);
+            } else if (this.map.regions[move.route[0]].units > 0) {
+                this.updateRegion(move.route[0], regionOwner, 0);
+            } else {
+                this.updateRegion(move.route[0], -1, 0);
+            }
+        } else {
+            this.updateRegion(move.route[0], move.ownerID, move.units);
+        }
     }
-    
-    if (updateMapFlag) {
-        // IMPLEMENT: updateMap()
+};
+
+Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
+    if (this.map.regions[regionID].ownerID == -1) {
+        if (newOwnerID != -1) {
+            // player gets country
+        }
+    } else {
+        if (this.map.regions[regionID].ownerID != newOwnerID) {
+            // player gets country
+        } else {
+            // player reinforces country
+        }
     }
 };
 
 Game.prototype.handleMove = function(move) {
-    // IMPLEMENT: check if correct move
-    // IMPLEMENT: only if live
+    if (!this.areNeighbors(move.route, 0)) {
+        return;
+    }
+
+    if (!this.isLive) {
+        return;
+    }
     
     if (this.map.regions[move.route[0]].ownerID == move.ownerID || this.map.regions[move.route[0]].ownerID == -1) {
         if (this.map.regions[move.route[0]].ownerID == move.ownerID) {
             if (this.map.regions[move.route[0]].units < move.units) {
                 return;
             } else {
-                // IMPLEMENT: update map
-                // IMPLEMENT: updateMap()
+                this.updateRegion(move.route[0], move.ownerID, -move.units);
             }
         }
         
@@ -110,6 +150,18 @@ Game.prototype.handleMove = function(move) {
     }  
 };
 
+Game.prototype.areNeighbors = function(route, index) {
+    if (index == route.length - 1) {
+        return true;
+    }
+
+    if (this.map.regions[route[index]].neighborIDs.contains(route[index + 1])) {
+        return this.areNeighbors(route, index + 1);
+    } else {
+        return false;
+    }
+};
+
 Game.prototype.handleMessage = function(message, name) {
     var responseObject = {
         name: name,
@@ -123,6 +175,10 @@ Game.prototype.broadcast = function(object) {
     for (var i = 0; i < this.players.length; i++) {
         this.players[i].send(object);
     }
+};
+
+Array.prototype.contains = function(item, from) {
+    return this.indexOf(item, from) != -1;
 };
 
 module.exports = Game;
