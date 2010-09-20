@@ -274,9 +274,12 @@ Game.prototype.areNeighbors = function(route, index) {
 };
 
 Game.prototype.getClientByName = function(name) {
+    sys.puts('Looking for: ' + name);
     for (var i = 0; i < this.players.length; i++) {
         if (this.players[i].name == name) {
-          return this.players[i];
+            sys.puts('Found');
+
+            return this.players[i];
         }
     }
 };
