@@ -187,6 +187,7 @@ Game.prototype.handleMove = function(move) {
         }
         
         // IMPLEMENT: optical move
+        // IMPLEMENT: calculate time
        move.route.shift(); 
         
         var closureMove = move;
@@ -208,6 +209,14 @@ Game.prototype.areNeighbors = function(route, index) {
         return this.areNeighbors(route, index + 1);
     } else {
         return false;
+    }
+};
+
+Game.prototype.getClientByName = function(name) {
+    for (var i = 0; i < this.players.length; i++) {
+        if (this.players[i].name == name) {
+          return this.players[i];
+        }
     }
 };
 
