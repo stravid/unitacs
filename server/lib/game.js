@@ -46,7 +46,8 @@ Game.prototype.addPlayer = function(client) {
         this.numberOfSpeedRegions = 0;
         this.numberOfTimeRegions = 0;  
     };
-    
+
+    client.init();
     client.send({map: this.map});
     
     this.action({
@@ -91,7 +92,6 @@ Game.prototype.start = function() {
     this.isLive = true;
 
     for (var i = 0; i < this.players.length; i++) {
-        this.players[i].init();
         this.players[i].setUnitInterval(this.standardTime);
     }
 };
