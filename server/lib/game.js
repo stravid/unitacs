@@ -75,7 +75,11 @@ Game.prototype.handleData = function(data, client) {
 };
 
 Game.prototype.start = function() {
-    this.isLive = true; 
+    this.isLive = true;
+
+    for (var i = 0; i < this.players.length; i++) {
+        this.players[i].unitInterval();
+    }
 };
 
 
