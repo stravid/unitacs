@@ -209,7 +209,7 @@ Game.prototype.handleInterval = function(client) {
     sys.puts(client.name + 'Interval');
 
     var amountOfNewUnits = client.numberOfUnitRegions * client.game.weightOfARegionOnUnits + client.game.standardUnits,
-        unitsPerBase = Math.floor(amountOfNewUnits / client.baseIDs.lenght),
+        unitsPerBase = Math.floor(amountOfNewUnits / client.baseIDs.length),
         unitOverflow = amountOfNewUnits % client.baseIDs.length;
 
     for (var i = 0; i < client.baseIDs.length; i++) {
