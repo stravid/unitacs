@@ -9,6 +9,14 @@ function Game(map) {
     this.startTimeoutID;
     this.timeOfStart;
     this.secondsUntilStart = 60;
+
+    this.standardUnits = 5;
+    this.standardTime = 15;
+    this.standardSpeed = 25;
+
+    this.weightOfARegionOnUnits = 1;
+    this.weightOfARegionOnTime = -3;
+    this.weightOfARegionOnSpeed = 5;
 };
 
 Game.prototype.addPlayer = function(client) {
@@ -16,6 +24,15 @@ Game.prototype.addPlayer = function(client) {
     
     this.players.push(client);
     client.game = this;
+
+    // FIXME: test
+    client.unitInterval = function() {
+        var that = this;
+        
+        that.intervalID = setInterval(function() {
+            that.game.handleInterval(that);
+        }, 5000);   
+    };
     
     client.send({map: this.map});
     
@@ -117,6 +134,10 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
             // player reinforces country
         }
     }
+};
+
+Game.prototype.handleInterval = function(client) {
+    sys.puts(client.name);
 };
 
 Game.prototype.handleMove = function(move) {
