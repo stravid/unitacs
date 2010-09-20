@@ -11,11 +11,11 @@ function Game(map) {
     this.secondsUntilStart = 60;
 
     this.standardUnits = 5;
-    this.standardTime = 15;
+    this.standardTime = 15000;
     this.standardSpeed = 25;
 
     this.weightOfARegionOnUnits = 1;
-    this.weightOfARegionOnTime = -3;
+    this.weightOfARegionOnTime = -3000;
     this.weightOfARegionOnSpeed = 5;
 };
 
@@ -26,12 +26,23 @@ Game.prototype.addPlayer = function(client) {
     client.game = this;
 
     // FIXME: test
-    client.unitInterval = function() {
+    client.setUnitInterval = function(miliseconds) {
         var that = this;
-        
+
+        if (that.intervalID) {
+            clearInterval(that.intervalID);
+        }
+
         that.intervalID = setInterval(function() {
             that.game.handleInterval(that);
-        }, 5000);   
+        }, miliseconds);   
+    };
+
+    client.init = function() {
+        this.baseIDs = [];
+        this.numberOfUnitRegions = 0;
+        this.numberOfSpeedRegions = 0;
+        this.numberOfTimeRegions = 0;  
     };
     
     client.send({map: this.map});
@@ -78,7 +89,8 @@ Game.prototype.start = function() {
     this.isLive = true;
 
     for (var i = 0; i < this.players.length; i++) {
-        this.players[i].unitInterval();
+        this.players[i].init();
+        this.players[i].setUnitInterval(this.standardTime);
     }
 };
 
@@ -141,7 +153,19 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
 };
 
 Game.prototype.handleInterval = function(client) {
-    sys.puts(client.name);
+    sys.puts(client.name + 'Interval');
+
+    var amountOfNewUnits = client.numberOfUnitRegions * client.game.weightOfARegionOnUnits + client.game.standardUnits,
+        unitsPerBase = Math.floor(amountOfNewUnits / client.baseIDs.lenght),
+        unitOverflow = amountOfNewUnits % client.baseIDs.length;
+
+    for (var i = 0; i < client.baseIDs.length; i++) {
+        if (i == 0) {
+            client.game.updateRegion(client.baseIDs[i], client.name, unitsPerBase + unitOverflow);
+        } else {
+            client.game.updateRegion(client.baseIDs[i], client.name, unitsPerBase);
+        }   
+    }
 };
 
 Game.prototype.handleMove = function(move) {
