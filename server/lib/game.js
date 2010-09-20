@@ -33,6 +33,8 @@ Game.prototype.addPlayer = function(client) {
             clearInterval(that.intervalID);
         }
 
+        sys.puts('Interval of ' + that.name + ' set to ' + miliseconds);
+
         that.intervalID = setInterval(function() {
             that.game.handleInterval(that);
         }, miliseconds);   
@@ -138,18 +140,63 @@ Game.prototype.action = function(move) {
     }
 };
 
+// IMPLEMENT: max unit cap of a region
 Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
+    var regionType = this.map.regions[regionID].regionType,
+        temporaryClient = this.getClientByName(newOwnerID);
+
     if (this.map.regions[regionID].ownerID == -1) {
         if (newOwnerID != -1) {
-            // player gets country
+            if (regionType == 0) {
+                temporaryClient.baseIDs.push(regionID); 
+            } else if (regionType == 1) {
+                temporaryClient.numberOfUnitRegions++;
+            } else if (regionType == 2) {
+                temporaryClient.numberOfTimeRegions++;
+
+                // FIXME: units get lost
+                temporaryClient.setUnitInterval(this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
+            } else if (regionType == 3) {
+                temporaryClient.numberOfSpeedRegions++;
+            }
+
+            // set region
+            this.map.regions[regionID].ownerID = newOwnerID;
+            this.map.regions[regionID].units = unitChange;
         }
     } else {
         if (this.map.regions[regionID].ownerID != newOwnerID) {
-            // player gets country
+            var oldClient = this.getClientByName(this.map.regions[regionID].ownerID);
+
+            if (regionType == 0) {
+                temporaryClient.baseIDs.push(regionID);
+                oldClient.baseIDs.splice(oldClient.baseIDs.indexOf(regionID), 1);
+                
+                sys.puts('New Client: ' + sys.inspect(temporaryClient.baseIDs));
+                sys.puts('Old Client: ' + sys.inspect(oldClient.baseIDs));
+            } else if (regionType == 1) {
+                temporaryClient.numberOfUnitRegions++;
+                oldClient.numberOfUnitRegions--;
+            } else if (regionType == 2) {
+                temporaryClient.numberOfTimeRegions++;
+                oldClient.numberOfTimeRegions--;
+
+                // FIXME: units get lost
+                temporaryClient.setUnitInterval(this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
+                oldClient.setUnitInterval(this.standardTime + this.weightOfARegionOnTime * old.numberOfTimeRegions);
+            } else if (regionType == 3) {
+                temporaryClient.numberOfSpeedRegions++;
+                oldClient.numberOfSpeedRegions--;
+            }
+
+            this.map.regions[regionID].ownerID = newOwnerID;
+            this.map.regions[regionID].units = unitChange;
         } else {
-            // player reinforces country
+            this.map.regions[regionID].units += unitChange;
         }
     }
+
+    // IMPLEMENT: send region update to all
 };
 
 Game.prototype.handleInterval = function(client) {
@@ -187,8 +234,16 @@ Game.prototype.handleMove = function(move) {
         }
         
         // IMPLEMENT: optical move
-        // IMPLEMENT: calculate time
-       move.route.shift(); 
+        var temporaryClient = this.getClientByName(move.ownerID),
+            durationOfMove,
+            speed;
+
+        speed = this.standardSpeed + temporaryClient.numberOfSpeedRegions * this.weightOfARegionOnSpeed;
+        durationOfMove = parseFloat(this.map.adjacencyMatrix[move.route[0]][move.route[1]] / speed);
+
+        sys.puts('Duration for move: ' + durationOfMove);
+
+        move.route.shift(); 
         
         var closureMove = move;
         var that = this;
@@ -196,7 +251,7 @@ Game.prototype.handleMove = function(move) {
         setTimeout(function() {
             sys.puts(sys.inspect(closureMove));
             that.action(closureMove);
-        }, 5000);
+        }, durationOfMove);
     }  
 };
 
