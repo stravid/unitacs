@@ -196,7 +196,13 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
         }
     }
 
-    // IMPLEMENT: send region update to all
+    this.broadcast({mapUpdate: [
+        {
+            ID: regionID,
+            ownerID: newOwnerID,
+            units: this.map.regions[regionID].units
+        }
+    ]});
 };
 
 Game.prototype.handleInterval = function(client) {
