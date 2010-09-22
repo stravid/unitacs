@@ -67,7 +67,7 @@ socket.on('message', function(data) {
 
 document.getElementById('play').onclick = function() {
     send({name: document.getElementById('playerName').value});  
-    CONST.MAP.MY_ID = document.getElementById('playerName').value;
+    CONST.MY_ID = document.getElementById('playerName').value;
 };
 
 document.getElementById('send').onclick = function() {

@@ -405,6 +405,8 @@ Map.prototype.initUnitSelection = function(regions) {
             var region = that.regions[i];
             
             // FIXME: need my ID
+            //console.log('regionOwner: ' + region.ownerID);
+            //console.log('myID: ' + );
             if (region.ownerID == CONST.MY_ID && region.units > 0) {
                 var regionUnits = that.paper.set();
                 
