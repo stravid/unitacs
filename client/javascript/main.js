@@ -24,7 +24,7 @@ var CONST = {
         TOP: 10,
         REGION_OVERLAY: 2
     },
-    MY_ID: 0
+    MY_ID: "david"
 };
 
 // 3D3425 5E5A38 A69055 C9B086 E5C47C
@@ -274,7 +274,7 @@ Map.prototype.build = function(regions, matrix) {
 
 Map.prototype.setSelectionStatus = function(status) {
     this.selectionStatus = status;
-    console.log(status);
+    //console.log(status);
     
     var back = false,
         select = false;
