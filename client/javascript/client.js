@@ -35,7 +35,7 @@ socket.on('message', function(data) {
         document.getElementById('mapContainer').style.display = 'block';
         document.getElementById('infoContainer').style.display = 'block';
 
-        unitacsClient.onMessage(data.map);
+        unitacsClient.onMessage(data);
     }
     
     if (data.timeOfStart) {
