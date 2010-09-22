@@ -267,7 +267,7 @@ Game.prototype.handleMove = function(move) {
         });
 
         speed = this.standardSpeed + temporaryClient.numberOfSpeedRegions * this.weightOfARegionOnSpeed;
-        durationOfMove = parseFloat(this.map.adjacencyMatrix[move.route[0]][move.route[1]] / speed);
+        durationOfMove = parseInt(parseFloat(this.map.adjacencyMatrix[move.route[0]][move.route[1]] / speed) * 1000);
 
         sys.puts('Duration for move: ' + durationOfMove);
 
