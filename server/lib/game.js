@@ -48,7 +48,7 @@ Game.prototype.addPlayer = function(client) {
     };
 
     client.init();
-    
+
     this.broadcast({listOfPlayersInGame: this.getPlayerList()});
 
     client.send({map: this.map});
@@ -95,6 +95,7 @@ Game.prototype.handleData = function(data, client) {
     }
     
     if (data.move) {
+        data.move.ownerID = client.name;
         this.handleMove(data.move);      
     }  
 };
@@ -254,6 +255,16 @@ Game.prototype.handleMove = function(move) {
         var temporaryClient = this.getClientByName(move.ownerID),
             durationOfMove,
             speed;
+
+        this.broadcast({
+            moveUnits: [{
+                departureID: move.route[0],
+                destinationID: move.route[1], 
+                units: move.units,
+                playerID: move.ownerID,
+                duration: durationOfMove
+                }]
+        });
 
         speed = this.standardSpeed + temporaryClient.numberOfSpeedRegions * this.weightOfARegionOnSpeed;
         durationOfMove = parseFloat(this.map.adjacencyMatrix[move.route[0]][move.route[1]] / speed);
