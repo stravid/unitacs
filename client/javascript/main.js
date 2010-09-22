@@ -205,7 +205,11 @@ UnitacsClient.prototype.setPlayers = function(playerList) {
             name: playerList[i].name,
             color: CONST.MAP.OWNER_COLOR[i]
         };
+        console.log(CONST.MAP.PLAYERS[playerList[i].ID]);
     }
+
+    console.log(CONST.MAP.PLAYERS);
+
 };
 
 function Map(mapData) {

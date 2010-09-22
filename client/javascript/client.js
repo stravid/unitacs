@@ -37,6 +37,10 @@ socket.on('message', function(data) {
 
         unitacsClient.onMessage(data);
     }
+
+    if (data.mapUpdate) {
+        unitacsClient.onMessage(data);
+    }
     
     if (data.timeOfStart) {
         timeOfStart = data.timeOfStart;
