@@ -256,6 +256,11 @@ Game.prototype.handleMove = function(move) {
             durationOfMove,
             speed;
 
+        speed = this.standardSpeed + temporaryClient.numberOfSpeedRegions * this.weightOfARegionOnSpeed;
+        durationOfMove = parseInt(parseFloat(this.map.adjacencyMatrix[move.route[0]][move.route[1]] / speed) * 1000);
+
+        sys.puts('Duration for move: ' + durationOfMove);
+
         this.broadcast({
             moveUnits: [{
                 departureID: move.route[0],
@@ -265,11 +270,6 @@ Game.prototype.handleMove = function(move) {
                 duration: durationOfMove
                 }]
         });
-
-        speed = this.standardSpeed + temporaryClient.numberOfSpeedRegions * this.weightOfARegionOnSpeed;
-        durationOfMove = parseInt(parseFloat(this.map.adjacencyMatrix[move.route[0]][move.route[1]] / speed) * 1000);
-
-        sys.puts('Duration for move: ' + durationOfMove);
 
         move.route.shift(); 
         
