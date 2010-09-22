@@ -66,23 +66,32 @@ socket.on('message', function(data) {
 });
 
 document.getElementById('play').onclick = function() {
-    send({name: document.getElementById('playerName').value});  
-    CONST.MY_ID = document.getElementById('playerName').value;
+    if (document.getElementById('playerName').value.length > 0) {
+        send({name: document.getElementById('playerName').value});  
+        CONST.MY_ID = document.getElementById('playerName').value;
+    }
 };
 
 document.getElementById('send').onclick = function() {
-    send({message: document.getElementById('message').value});  
+    if (document.getElementById('message').value.length > 0) {
+        send({message: document.getElementById('message').value});
+        document.getElementById('message').value = "";
+    }
 };
 
 document.getElementById('nameForm').onsubmit = function() {
-    send({name: document.getElementById('playerName').value});
-    
+    if (document.getElementById('playerName').value.length > 0) {
+         send({name: document.getElementById('playerName').value});
+         CONST.MY_ID = document.getElementById('playerName').value;
+    }
     return false;
 };
 
 document.getElementById('chatForm').onsubmit = function() {
-    send({message: document.getElementById('message').value});
-    
+    if (document.getElementById('message').value.length > 0) {
+        send({message: document.getElementById('message').value});
+        document.getElementById('message').value = "";
+    }
     return false; 
 };
 
