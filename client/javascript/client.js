@@ -28,10 +28,6 @@ socket.on('message', function(data) {
     
     if (data.map) {
         document.getElementById('nameForm').style.display = 'none';
-
-        document.getElementById('countdown').style.display = 'none';
-        clearInterval(countdownIntervalID);
-
         document.getElementById('mapContainer').style.display = 'block';
         document.getElementById('infoContainer').style.display = 'block';
 
@@ -71,6 +67,7 @@ socket.on('message', function(data) {
 
 document.getElementById('play').onclick = function() {
     send({name: document.getElementById('playerName').value});  
+    CONST.MAP.MY_ID = document.getElementById('playerName').value;
 };
 
 document.getElementById('send').onclick = function() {

@@ -1,14 +1,14 @@
 var sys = require('sys');
 
 function Game(map) {
-    sys.puts('Game');
+    sys.log('Game Instance Created');
     
     this.map = map;
     this.isLive = false;
     this.players = [];
     this.startTimeoutID;
     this.timeOfStart;
-    this.secondsUntilStart = 60;
+    this.secondsUntilStart = 10;
 
     this.standardUnits = 5;
     this.standardTime = 15000;
@@ -21,11 +21,11 @@ function Game(map) {
 
 Game.prototype.addPlayer = function(client) {
     sys.puts('Player added');
-    
+    sys.log(client.name + ' added to game');
+
     this.players.push(client);
     client.game = this;
 
-    // FIXME: test
     client.setUnitInterval = function(miliseconds) {
         var that = this;
 
@@ -33,7 +33,7 @@ Game.prototype.addPlayer = function(client) {
             clearInterval(that.intervalID);
         }
 
-        sys.puts('Interval of ' + that.name + ' set to ' + miliseconds);
+        sys.log('Interval of ' + that.name + ' set to ' + miliseconds);
 
         that.intervalID = setInterval(function() {
             that.game.handleInterval(that);
@@ -56,10 +56,11 @@ Game.prototype.addPlayer = function(client) {
     this.action({
         route: [this.map.regionIDsPerType[0][this.players.length - 1]],
         ownerID: client.name,
-        units: 5
+        units: 1
     });
         
-    if (this.players.length == 4) {
+    // FIXME: no constants
+    if (this.players.length == 3) {
         this.start();
         clearTimeout(this.startTimeoutID);
     } else {
@@ -89,12 +90,12 @@ Game.prototype.getPlayerList = function() {
 };
 
 Game.prototype.handleData = function(data, client) {
-    // IMPLEMENT: logic
     if (data.message) {
         this.handleMessage(data.message, client.name);
     }
     
     if (data.move) {
+        // FIXME: only a hotfix since the client doesnt know who he is
         data.move.ownerID = client.name;
         this.handleMove(data.move);      
     }  
@@ -103,50 +104,72 @@ Game.prototype.handleData = function(data, client) {
 Game.prototype.start = function() {
     this.isLive = true;
 
+    sys.log('Game started');
+
     for (var i = 0; i < this.players.length; i++) {
         this.players[i].setUnitInterval(this.standardTime);
     }
 };
-
 
 // FIXME: better solution
 // FIXME: test cases with sys.puts()
 Game.prototype.action = function(move) {
     var regionOwner = this.map.regions[move.route[0]].ownerID;
 
+    sys.puts('DEBUG Move: ' + sys.inspect(move));
+    sys.puts('DEBUG Region');
+    sys.puts('ownerID: ' + regionOwner);
+    sys.puts('units: ' + this.map.regions[move.route[0]].units);
+
     if (move.route.length > 1) {
+        sys.puts('DEBUG Multi move');
+
         if (regionOwner != move.ownerID && regionOwner != -1) {
             var attackerUnits = move.units;
+
+            sys.puts('Enemy Region');
 
             move.units -= this.map.regions[move.route[0]].units;
             this.map.regions[move.route[0]].units -= attackerUnits;
 
             if (move.units > 0) {
+                sys.puts('Attacker won, moves on');
                 this.updateRegion(move.route[0], -1, 0);
                 this.handleMove(move);
             } else if (this.map.regions[move.route[0]].units > 0) {
+                sys.puts('Defender won');
                 this.updateRegion(move.route[0], regionOwner, 0);
             } else {
+                sys.puts('Both lost');
                 this.updateRegion(move.route[0], -1, 0);
             }
         } else {
+            sys.puts('Neutral region');
             this.handleMove(move);
         }
     } else {
+        sys.puts('DEBUG Final move');
+
         if (regionOwner != move.ownerID && regionOwner != -1) {
             var attackerUnits = move.units;
+
+            sys.puts('Enemy Region');
 
             move.units -= this.map.regions[move.route[0]].units;
             this.map.regions[move.route[0]].units -= attackerUnits;
 
             if (move.units > 0) {
+                sys.puts('Attacker won');
                 this.updateRegion(move.route[0], move.ownerID, move.units);
             } else if (this.map.regions[move.route[0]].units > 0) {
+                sys.puts('Defender won');
                 this.updateRegion(move.route[0], regionOwner, 0);
             } else {
+                sys.puts('Both lost');
                 this.updateRegion(move.route[0], -1, 0);
             }
         } else {
+            sys.puts('Neutral region');
             this.updateRegion(move.route[0], move.ownerID, move.units);
         }
     }
@@ -218,8 +241,6 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
 };
 
 Game.prototype.handleInterval = function(client) {
-    sys.puts(client.name + 'Interval');
-
     var amountOfNewUnits = client.numberOfUnitRegions * client.game.weightOfARegionOnUnits + client.game.standardUnits,
         unitsPerBase = Math.floor(amountOfNewUnits / client.baseIDs.length),
         unitOverflow = amountOfNewUnits % client.baseIDs.length;
@@ -251,7 +272,6 @@ Game.prototype.handleMove = function(move) {
             }
         }
         
-        // IMPLEMENT: optical move
         var temporaryClient = this.getClientByName(move.ownerID),
             durationOfMove,
             speed;
@@ -259,7 +279,7 @@ Game.prototype.handleMove = function(move) {
         speed = this.standardSpeed + temporaryClient.numberOfSpeedRegions * this.weightOfARegionOnSpeed;
         durationOfMove = parseInt(parseFloat(this.map.adjacencyMatrix[move.route[0]][move.route[1]] / speed) * 1000);
 
-        sys.puts('Duration for move: ' + durationOfMove);
+        //sys.puts('Duration for move: ' + durationOfMove);
 
         this.broadcast({
             moveUnits: [{
@@ -277,7 +297,7 @@ Game.prototype.handleMove = function(move) {
         var that = this;
         
         setTimeout(function() {
-            sys.puts(sys.inspect(closureMove));
+            //sys.puts(sys.inspect(closureMove));
             that.action(closureMove);
         }, durationOfMove);
     }  
@@ -296,11 +316,8 @@ Game.prototype.areNeighbors = function(route, index) {
 };
 
 Game.prototype.getClientByName = function(name) {
-    sys.puts('Looking for: ' + name);
     for (var i = 0; i < this.players.length; i++) {
         if (this.players[i].name == name) {
-            sys.puts('Found');
-
             return this.players[i];
         }
     }

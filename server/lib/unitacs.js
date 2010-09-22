@@ -3,7 +3,7 @@ var sys = require('sys'),
     MapGenerator = require('./mapgenerator/mapgenerator');
 
 function Unitacs(){
-    sys.puts('Unitacs');
+    sys.log('Unitacs Instance Created');
     
     this.takenNames = [];
     this.games= [];
@@ -12,8 +12,10 @@ function Unitacs(){
 };
 
 Unitacs.prototype.handleData = function(data, client) {
-    sys.puts(sys.inspect(data));
-    
+    if (client.name) {
+        sys.puts('DEBUG ' + client.name + ' sent: ' + sys.inspect(data));
+    }
+
     if (data.name) {
         if (this.takenNames.contains(data.name)) {
             client.send({isNameTaken: true});
