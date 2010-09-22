@@ -172,8 +172,8 @@ function UnitacsClient() {
 };
 
 UnitacsClient.prototype.onMessage = function(messageObject) {
-    if (messageObject.mapData)
-        this.map = new Map(messageObject.mapData);
+    if (messageObject.map)
+        this.map = new Map(messageObject.map);
     
     if (messageObject.listOfPlayersInGame)
         this.setPlayers(messageObject.listOfPlayersInGame);
@@ -624,7 +624,11 @@ Map.prototype.startMoves = function() {
         var route = this.moveRoutes[i].concat(this.routingPath);
         if (route.length > 1) {
             // FIXME: send moveData
-            testSend({move: {
+            //testSend({move: {
+            //    route: route,
+            //    units: this.selectedUnits[i].length
+            //}});
+            send({move: {
                 route: route,
                 units: this.selectedUnits[i].length
             }});
@@ -781,7 +785,7 @@ Map.prototype.createMove = function(departureID, destinationID, units, playerID,
     );
 };
 
-var client = new UnitacsClient();
+/*var client = new UnitacsClient();
 
 function testSend(messageObject) {
     if (messageObject.move) {
@@ -795,7 +799,7 @@ function testSend(messageObject) {
                 }]
         });
     }
-};
+};*/
 
 // http://andylangton.co.uk/articles/javascript/get-viewport-size-javascript/
 function getViewport() {

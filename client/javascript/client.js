@@ -6,7 +6,8 @@ var socket = new io.Socket(null, {port: 8080});
 
 var countdownIntervalID,
     timeOfStart,
-    secondsUntilStart;
+    secondsUntilStart,
+    unitacsClient = new UnitacsClient();
 
 socket.connect();
 socket.on('message', function(data) {
@@ -27,8 +28,14 @@ socket.on('message', function(data) {
     
     if (data.map) {
         document.getElementById('nameForm').style.display = 'none';
+
+        document.getElementById('countdown').style.display = 'none';
+        clearInterval(countdownIntervalID);
+
         document.getElementById('mapContainer').style.display = 'block';
         document.getElementById('infoContainer').style.display = 'block';
+
+        unitacsClient.onMessage(data.map);
     }
     
     if (data.timeOfStart) {
