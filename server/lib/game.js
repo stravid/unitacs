@@ -48,6 +48,9 @@ Game.prototype.addPlayer = function(client) {
     };
 
     client.init();
+    
+    this.broadcast({listOfPlayersInGame: this.getPlayerList()});
+
     client.send({map: this.map});
     
     this.action({
@@ -55,9 +58,7 @@ Game.prototype.addPlayer = function(client) {
         ownerID: client.name,
         units: 5
     });
-    
-    this.broadcast({listOfPlayersInGame: this.getPlayerList()});
-    
+        
     if (this.players.length == 4) {
         this.start();
         clearTimeout(this.startTimeoutID);
