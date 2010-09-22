@@ -56,7 +56,7 @@ Game.prototype.addPlayer = function(client) {
         units: 5
     });
     
-    // IMPLEMENT: update player list
+    this.broadcast({listOfPlayersInGame: this.getPlayerList()});
     
     if (this.players.length == 4) {
         this.start();
@@ -75,6 +75,16 @@ Game.prototype.addPlayer = function(client) {
             client.send({timeOfStart: this.timeOfStart});
         }
     }
+};
+
+Game.prototype.getPlayerList = function() {
+    var result = [];
+    
+    for (var i = 0; i < this.players.length; i++) {
+          result.push({name: this.players[i].name, ID: this.players[i].name});
+    }  
+
+    return result;
 };
 
 Game.prototype.handleData = function(data, client) {
