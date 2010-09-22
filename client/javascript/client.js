@@ -45,6 +45,10 @@ socket.on('message', function(data) {
     if (data.listOfPlayersInGame) {
         unitacsClient.onMessage(data);
     }
+
+    if (data.moveUnits) {
+        unitacsClient.onMessage(data);
+    }
     
     if (data.timeOfStart) {
         timeOfStart = data.timeOfStart;
