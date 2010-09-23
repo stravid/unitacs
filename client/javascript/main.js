@@ -6,11 +6,11 @@ var CONST = {
         SCALE: 1,
         VIEWPORT_WIDTH_VARIANCE: 20,
         VIEWPORT_HEIGHT_VARIANCE: 30,
-        CENTER_SIZE: 5, // 30
-        UNIT_SIZE: 5,
-        UNIT_TO_CENTER: 20,
+        CENTER_SIZE: 3, // 30
+        UNIT_SIZE: 3,
+        UNIT_TO_CENTER: 10,
         UNITS_PER_REGION: 10,
-        CHECKPOINT_SIZE: 10,
+        CHECKPOINT_SIZE: 5,
         // TYPE_COLOR: ['#2D2B21', '#A69055', '#C9B086', '#FFB88C'],
         // STROKE_COLOR: '#141919',
         TYPE_COLOR: ['#5E5A38', '#A69055', '#C9B086', '#E5C47C'],
@@ -20,8 +20,8 @@ var CONST = {
         FADE_COLOR: '#3D3E40',
         OWNER_COLOR: ['#59BA32', '#F2DE49', '#8E8F94', '#125496', '#B82525', '#06c'],
         PLAYERS: {},
-        LEFT: 10,
-        TOP: 10,
+        LEFT: 0,
+        TOP: 0,
         REGION_OVERLAY: 2
     },
     MY_ID: ""

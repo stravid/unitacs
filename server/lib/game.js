@@ -15,6 +15,7 @@ function Game(map) {
     this.standardSpeed = 25;
 
     this.weightOfARegionOnUnits = 1;
+    // FIXME: consider overflow
     this.weightOfARegionOnTime = -3000;
     this.weightOfARegionOnSpeed = 5;
 };
@@ -36,6 +37,8 @@ Game.prototype.addPlayer = function(client) {
         sys.log('Interval of ' + that.name + ' set to ' + miliseconds);
 
         that.intervalID = setInterval(function() {
+            // FIXME: check if interval-time changed
+            
             that.game.handleInterval(that);
         }, miliseconds);   
     };
@@ -95,7 +98,7 @@ Game.prototype.handleData = function(data, client) {
     }
     
     if (data.move) {
-        // FIXME: only a hotfix since the client doesnt know who he is
+        // FIXME: only a hotfix since the client doesn't know who he is
         data.move.ownerID = client.name;
         this.handleMove(data.move);      
     }  
@@ -176,6 +179,7 @@ Game.prototype.action = function(move) {
 };
 
 // IMPLEMENT: max unit cap of a region
+// FIXME: newOwnerID == -1
 Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
     var regionType = this.map.regions[regionID].regionType,
         temporaryClient = this.getClientByName(newOwnerID),
