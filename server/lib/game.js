@@ -178,7 +178,8 @@ Game.prototype.action = function(move) {
 // IMPLEMENT: max unit cap of a region
 Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
     var regionType = this.map.regions[regionID].regionType,
-        temporaryClient = this.getClientByName(newOwnerID);
+        temporaryClient = this.getClientByName(newOwnerID),
+        maximum;
 
     if (this.map.regions[regionID].ownerID == -1) {
         if (newOwnerID != -1) {

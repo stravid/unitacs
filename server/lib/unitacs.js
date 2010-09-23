@@ -1,9 +1,12 @@
 var sys = require('sys'),
     Game = require('./game'),
-    MapGenerator = require('./mapgenerator/mapgenerator');
+    MapGenerator = require('./mapgenerator/mapgenerator'),
+    fs = require('fs'),
+    Log = require('./log.js/log'),
+    log = new Log(Log.DEBUG, fs.createWriteStream('serverlog.txt'));
 
 function Unitacs(){
-    sys.log('Unitacs Instance Created');
+    log.info('Unitacs Instance Created');
     
     this.takenNames = [];
     this.games= [];
@@ -13,7 +16,7 @@ function Unitacs(){
 
 Unitacs.prototype.handleData = function(data, client) {
     if (client.name) {
-        sys.puts('DEBUG ' + client.name + ' sent: ' + sys.inspect(data));
+        log.debug(client.name + ' sent: ' + sys.inspect(data));
     }
 
     if (data.name) {
@@ -95,7 +98,7 @@ Unitacs.prototype.constructMap = function(map) {
                 }
             }
         } else {
-            sys.puts('WARNING: Base is connected with other base!');
+            log.warning('Base is connected with other base');
             unusedRegionIDs.shuffle();
             newBaseID = unusedRegionIDs.shift();
         }
