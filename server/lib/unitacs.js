@@ -3,13 +3,15 @@ var sys = require('sys'),
     MapGenerator = require('./mapgenerator/mapgenerator'),
     fs = require('fs'),
     Log = require('./log.js/log'),
-    log = new Log(Log.DEBUG, fs.createWriteStream('serverlog.txt'));
+    log = new Log(Log.DEBUG);
+    //log = new Log(Log.DEBUG, fs.createWriteStream('../serverlog.txt'));
 
 function Unitacs(){
     log.info('Unitacs Instance Created');
     
     this.takenNames = [];
     this.games= [];
+    this.generator = new MapGenerator();
     
     this.createNewGame();
 };
@@ -35,16 +37,13 @@ Unitacs.prototype.handleData = function(data, client) {
 // IMPLEMENT: gameConfig
 // FIXME: no hardcoded constants
 Unitacs.prototype.createNewGame = function() {
-    var mapGenerator = new MapGenerator();
+    var regionIDsPerType = [],
+        map;
     
-    mapGenerator.createHexagonPattern(500, 400, 20, false);
-    mapGenerator.generate(30, 0.5, false);
+    this.generator.createHexagonPattern(500, 400, 20, false);
+    this.generator.generate(30, 0.5, false);
     
-    var map = mapGenerator.getMap();
-    
-    map = this.constructMap(map);
-    
-    var regionIDsPerType = [];
+    map = this.constructMap(this.generator.getMap());
     
     regionIDsPerType[0] = [];
     regionIDsPerType[1] = [];
@@ -56,10 +55,8 @@ Unitacs.prototype.createNewGame = function() {
     }
     
     map.regionIDsPerType = regionIDsPerType;
-    
-    var game = new Game(map);
-    
-    this.games.push(game);
+
+    this.games.push(new Game(map));
 };
 
 Unitacs.prototype.addPlayerToGame = function(client) {

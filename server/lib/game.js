@@ -1,7 +1,11 @@
-var sys = require('sys');
+var sys = require('sys'),
+    fs = require('fs'),
+    Log = require('./log.js/log'),
+    log = new Log(Log.DEBUG);
+    //log = new Log(Log.DEBUG, fs.createWriteStream('../serverlog.txt'));
 
 function Game(map) {
-    sys.log('Game Instance Created');
+    log.info('Game Instance Created');
     
     this.map = map;
     this.isLive = false;
@@ -21,8 +25,7 @@ function Game(map) {
 };
 
 Game.prototype.addPlayer = function(client) {
-    sys.puts('Player added');
-    sys.log(client.name + ' added to game');
+    log.info(client.name + ' added to game');
 
     this.players.push(client);
     client.game = this;
@@ -34,7 +37,7 @@ Game.prototype.addPlayer = function(client) {
             clearInterval(that.intervalID);
         }
 
-        sys.log('Interval of ' + that.name + ' set to ' + miliseconds);
+        log.info('Interval of ' + that.name + ' set to ' + miliseconds);
 
         that.intervalID = setInterval(function() {
             // FIXME: check if interval-time changed
@@ -107,7 +110,7 @@ Game.prototype.handleData = function(data, client) {
 Game.prototype.start = function() {
     this.isLive = true;
 
-    sys.log('Game started');
+    log.info('Game started');
 
     for (var i = 0; i < this.players.length; i++) {
         this.players[i].setUnitInterval(this.standardTime);
@@ -119,60 +122,60 @@ Game.prototype.start = function() {
 Game.prototype.action = function(move) {
     var regionOwner = this.map.regions[move.route[0]].ownerID;
 
-    sys.puts('DEBUG Move: ' + sys.inspect(move));
-    sys.puts('DEBUG Region');
-    sys.puts('ownerID: ' + regionOwner);
-    sys.puts('units: ' + this.map.regions[move.route[0]].units);
+    log.debug('Move: ' + sys.inspect(move));
+    log.debug('Region');
+    log.debug('ownerID: ' + regionOwner);
+    log.debug('units: ' + this.map.regions[move.route[0]].units);
 
     if (move.route.length > 1) {
-        sys.puts('DEBUG Multi move');
+        log.debug('Multi move');
 
         if (regionOwner != move.ownerID && regionOwner != -1) {
             var attackerUnits = move.units;
 
-            sys.puts('Enemy Region');
+            log.debug('Enemy Region');
 
             move.units -= this.map.regions[move.route[0]].units;
             this.map.regions[move.route[0]].units -= attackerUnits;
 
             if (move.units > 0) {
-                sys.puts('Attacker won, moves on');
+                log.debug('Attacker won, moves on');
                 this.updateRegion(move.route[0], -1, 0);
                 this.handleMove(move);
             } else if (this.map.regions[move.route[0]].units > 0) {
-                sys.puts('Defender won');
+                log.debug('Defender won');
                 this.updateRegion(move.route[0], regionOwner, 0);
             } else {
-                sys.puts('Both lost');
+                log.debug('Both lost');
                 this.updateRegion(move.route[0], -1, 0);
             }
         } else {
-            sys.puts('Neutral region');
+            log.debug('Neutral region');
             this.handleMove(move);
         }
     } else {
-        sys.puts('DEBUG Final move');
+        log.debug('Final move');
 
         if (regionOwner != move.ownerID && regionOwner != -1) {
             var attackerUnits = move.units;
 
-            sys.puts('Enemy Region');
+            log.debug('Enemy Region');
 
             move.units -= this.map.regions[move.route[0]].units;
             this.map.regions[move.route[0]].units -= attackerUnits;
 
             if (move.units > 0) {
-                sys.puts('Attacker won');
+                log.debug('Attacker won');
                 this.updateRegion(move.route[0], move.ownerID, move.units);
             } else if (this.map.regions[move.route[0]].units > 0) {
-                sys.puts('Defender won');
+                log.debug('Defender won');
                 this.updateRegion(move.route[0], regionOwner, 0);
             } else {
-                sys.puts('Both lost');
+                log.debug('Both lost');
                 this.updateRegion(move.route[0], -1, 0);
             }
         } else {
-            sys.puts('Neutral region');
+            log.debug('Neutral region');
             this.updateRegion(move.route[0], move.ownerID, move.units);
         }
     }
@@ -212,8 +215,8 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
                 temporaryClient.baseIDs.push(regionID);
                 oldClient.baseIDs.splice(oldClient.baseIDs.indexOf(regionID), 1);
                 
-                sys.puts('New Client: ' + sys.inspect(temporaryClient.baseIDs));
-                sys.puts('Old Client: ' + sys.inspect(oldClient.baseIDs));
+                log.debug('New Client: ' + sys.inspect(temporaryClient.baseIDs));
+                log.debug('Old Client: ' + sys.inspect(oldClient.baseIDs));
             } else if (regionType == 1) {
                 temporaryClient.numberOfUnitRegions++;
                 oldClient.numberOfUnitRegions--;
