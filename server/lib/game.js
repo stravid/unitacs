@@ -30,27 +30,30 @@ Game.prototype.addPlayer = function(client) {
     this.players.push(client);
     client.game = this;
 
-    client.setUnitInterval = function(miliseconds) {
+    client.setUnitInterval = function() {
         var that = this;
 
-        if (that.intervalID) {
-            clearInterval(that.intervalID);
+        if (this.intervalID) {
+            clearInterval(this.intervalID);
         }
 
-        log.info('Interval of ' + that.name + ' set to ' + miliseconds);
+        log.info('Interval of ' + this.name + ' set to ' + this.intervalReloadValue);
 
-        that.intervalID = setInterval(function() {
+        this.intervalID = setInterval(function() {
             // FIXME: check if interval-time changed
             
             that.game.handleInterval(that);
-        }, miliseconds);   
+        }, this.intervalReloadValue);
+
+        this.intervalReloadValue = null;
     };
 
     client.init = function() {
         this.baseIDs = [];
         this.numberOfUnitRegions = 0;
         this.numberOfSpeedRegions = 0;
-        this.numberOfTimeRegions = 0;  
+        this.numberOfTimeRegions = 0;
+        this.intervalReloadValue = this.standardTime;
     };
 
     client.init();
@@ -113,7 +116,7 @@ Game.prototype.start = function() {
     log.info('Game started');
 
     for (var i = 0; i < this.players.length; i++) {
-        this.players[i].setUnitInterval(this.standardTime);
+        this.handleInterval(this.players[i]);
     }
 };
 
@@ -198,7 +201,7 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
                 temporaryClient.numberOfTimeRegions++;
 
                 // FIXME: units get lost
-                temporaryClient.setUnitInterval(this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
+                temporaryClient.intervalReloadValue = (this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
             } else if (regionType == 3) {
                 temporaryClient.numberOfSpeedRegions++;
             }
@@ -225,8 +228,8 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
                 oldClient.numberOfTimeRegions--;
 
                 // FIXME: units get lost
-                temporaryClient.setUnitInterval(this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
-                oldClient.setUnitInterval(this.standardTime + this.weightOfARegionOnTime * old.numberOfTimeRegions);
+                temporaryClient.intervalReloadValue = (this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
+                oldClient.intervalReloadValue = (this.standardTime + this.weightOfARegionOnTime * old.numberOfTimeRegions);
             } else if (regionType == 3) {
                 temporaryClient.numberOfSpeedRegions++;
                 oldClient.numberOfSpeedRegions--;
@@ -259,6 +262,10 @@ Game.prototype.handleInterval = function(client) {
         } else {
             client.game.updateRegion(client.baseIDs[i], client.name, unitsPerBase);
         }   
+    }
+
+    if (client.intervalReloadValue) {
+        client.setUnitInterval();
     }
 };
 
