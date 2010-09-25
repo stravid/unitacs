@@ -265,6 +265,7 @@ Game.prototype.handleInterval = function(client) {
     }
 
     if (client.intervalReloadValue) {
+        log.debug('HandleInterval calls setUnitInterval');
         client.setUnitInterval();
     }
 };
