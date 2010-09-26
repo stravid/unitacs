@@ -112,6 +112,7 @@ Game.prototype.handleData = function(data, client) {
     
     if (data.move) {
         // FIXME: only a hotfix since the client doesn't know who he is
+        log.debug(sys.inspect(data.move));
         data.move.ownerID = client.name;
         this.handleMove(data.move);      
     }  
