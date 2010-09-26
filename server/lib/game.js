@@ -264,10 +264,19 @@ Game.prototype.handleInterval = function(client) {
         unitOverflow = amountOfNewUnits % client.baseIDs.length;
 
     for (var i = 0; i < client.baseIDs.length; i++) {
+        // FIXME: dirty hack to remove overflow problem
         if (i == 0) {
-            client.game.updateRegion(client.baseIDs[i], client.name, unitsPerBase + unitOverflow);
+            if (this.map.regions[client.baseIDs[i]].units + unitsPerBase + unitOverflow <= 10) {
+                client.game.updateRegion(client.baseIDs[i], client.name, unitsPerBase + unitOverflow); 
+            } else {
+                client.game.updateRegion(client.baseIDs[i], client.name, 10 - this.map.regions[client.baseIDs[i]].units);
+            }
         } else {
-            client.game.updateRegion(client.baseIDs[i], client.name, unitsPerBase);
+            if (this.map.regions[client.baseIDs[i]].units + unitsPerBase <= 10) {
+                client.game.updateRegion(client.baseIDs[i], client.name, unitsPerBase); 
+            } else {
+                client.game.updateRegion(client.baseIDs[i], client.name, 10 - this.map.regions[client.baseIDs[i]].units);
+            }
         }   
     }
 
