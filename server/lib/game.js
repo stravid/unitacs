@@ -22,6 +22,13 @@ function Game(map) {
     // FIXME: consider overflow
     this.weightOfARegionOnTime = -3000;
     this.weightOfARegionOnSpeed = 5;
+
+    this.regionTypes = {
+        BASE: 0,
+        UNIT: 1,
+        TIME: 2,
+        SPEED: 3
+    };
 };
 
 Game.prototype.addPlayer = function(client) {
@@ -193,16 +200,16 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
 
     if (this.map.regions[regionID].ownerID == -1) {
         if (newOwnerID != -1) {
-            if (regionType == 0) {
+            if (regionType == this.regionType.BASE) {
                 temporaryClient.baseIDs.push(regionID); 
-            } else if (regionType == 1) {
+            } else if (regionType == this.regionType.UNIT) {
                 temporaryClient.numberOfUnitRegions++;
-            } else if (regionType == 2) {
+            } else if (regionType == this.regionType.TIME) {
                 temporaryClient.numberOfTimeRegions++;
 
                 // FIXME: units get lost
                 temporaryClient.intervalReloadValue = (this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
-            } else if (regionType == 3) {
+            } else if (regionType == this.regionType.SPEED) {
                 temporaryClient.numberOfSpeedRegions++;
             }
 
@@ -214,23 +221,23 @@ Game.prototype.updateRegion = function(regionID, newOwnerID, unitChange) {
         if (this.map.regions[regionID].ownerID != newOwnerID) {
             var oldClient = this.getClientByName(this.map.regions[regionID].ownerID);
 
-            if (regionType == 0) {
+            if (regionType == this.regionType.BASE) {
                 temporaryClient.baseIDs.push(regionID);
                 oldClient.baseIDs.splice(oldClient.baseIDs.indexOf(regionID), 1);
                 
                 log.debug('New Client: ' + sys.inspect(temporaryClient.baseIDs));
                 log.debug('Old Client: ' + sys.inspect(oldClient.baseIDs));
-            } else if (regionType == 1) {
+            } else if (regionType == this.regionType.UNIT) {
                 temporaryClient.numberOfUnitRegions++;
                 oldClient.numberOfUnitRegions--;
-            } else if (regionType == 2) {
+            } else if (regionType == this.regionType.TIME) {
                 temporaryClient.numberOfTimeRegions++;
                 oldClient.numberOfTimeRegions--;
 
                 // FIXME: units get lost
                 temporaryClient.intervalReloadValue = (this.standardTime + this.weightOfARegionOnTime * temporaryClient.numberOfTimeRegions);
                 oldClient.intervalReloadValue = (this.standardTime + this.weightOfARegionOnTime * old.numberOfTimeRegions);
-            } else if (regionType == 3) {
+            } else if (regionType == this.regionType.SPEED) {
                 temporaryClient.numberOfSpeedRegions++;
                 oldClient.numberOfSpeedRegions--;
             }
