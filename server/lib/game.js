@@ -60,7 +60,7 @@ Game.prototype.addPlayer = function(client) {
         this.numberOfUnitRegions = 0;
         this.numberOfSpeedRegions = 0;
         this.numberOfTimeRegions = 0;
-        this.intervalReloadValue = 15000;
+        this.intervalReloadValue = this.standardTime;
     };
 
     client.init();
