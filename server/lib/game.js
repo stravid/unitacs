@@ -14,13 +14,13 @@ function Game(map) {
     this.timeOfStart;
     this.secondsUntilStart = 10;
 
-    this.standardUnits = 5;
-    this.standardTime = 15000;
-    this.standardSpeed = 25;
+    this.standardUnits = 2;
+    this.standardTime = 60000;
+    this.standardSpeed = 30;
 
     this.weightOfARegionOnUnits = 1;
     // FIXME: consider overflow
-    this.weightOfARegionOnTime = -3000;
+    this.weightOfARegionOnTime = -5000;
     this.weightOfARegionOnSpeed = 5;
 
     this.regionTypes = {

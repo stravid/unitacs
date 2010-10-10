@@ -108,6 +108,97 @@ Unitacs.prototype.constructMap = function(map) {
     for (var i = 0; i < unusedRegionIDs.length; i++) {
         map.regions[unusedRegionIDs[i]].regionType = i % 3 + 1;
     }
+
+    if (true) {
+        map = {};
+
+        map.regions = [
+            {
+                ID: 0,
+                neighborIDs: [1],
+                regionType: 1,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 1,
+                neighborIDs: [0, 2, 4, 5],
+                regionType: 0,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 2,
+                neighborIDs: [1, 3, 5],
+                regionType: 2,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 3,
+                neighborIDs: [2],
+                regionType: 2,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 4,
+                neighborIDs: [1, 5, 7],
+                regionType: 3,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 5,
+                neighborIDs: [1, 2, 4, 6, 7, 8],
+                regionType: 1,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 6,
+                neighborIDs: [5, 8, 9, 10],
+                regionType: 0,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 7,
+                neighborIDs: [4, 5, 8],
+                regionType: 0,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 8,
+                neighborIDs: [5, 6, 7, 10, 11],
+                regionType: 1,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 9,
+                neighborIDs: [6, 10],
+                regionType: 3,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 10,
+                neighborIDs: [6, 8, 9, 11],
+                regionType: 3,
+                ownerID: -1,
+                units: 0
+            },
+            {
+                ID: 11,
+                neighborIDs: [8, 10],
+                regionType: 2,
+                ownerID: -1,
+                units: 0
+            }
+        ];
+    }
     
     return map;
 };

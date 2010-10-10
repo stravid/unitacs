@@ -8,11 +8,10 @@ var http = require('http'),
     
 var unitacsServer = new Unitacs(),
     DummyClient = function() {
-        
     };
 
 DummyClient.prototype.send = function(message) {
-    
+   sys.puts(sys.inspect(message)); 
 };
 
 
